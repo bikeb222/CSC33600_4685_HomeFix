@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+npm-debug.log*
+mysql_data/
+draft_backup/
+
+code/client/node_modules/
+code/server/node_modules/
+code/client/dist/
+code/server/dist/
+
+.DS_Store
+Thumbs.db
+~$*
+.$*
+*.bkp

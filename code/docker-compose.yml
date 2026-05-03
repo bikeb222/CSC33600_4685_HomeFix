@@ -1,0 +1,59 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: homefix-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_NAME:-homefix}
+      MYSQL_USER: ${DB_USER:-homefix_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-homefix_password}
+    ports:
+      # Host port 33306 avoids common local MySQL ports 3306 and 3307.
+      # The MySQL container still listens on its standard internal port 3306.
+      - "${DB_PORT:-33306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./server/migrations/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./server/seed/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: ./server
+    container_name: homefix-server
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      # Container-to-container traffic uses the internal MySQL port.
+      DB_PORT: 3306
+      DB_USER: ${DB_USER:-homefix_user}
+      DB_PASSWORD: ${DB_PASSWORD:-homefix_password}
+      DB_NAME: ${DB_NAME:-homefix}
+      PORT: 5000
+      CLIENT_URL: http://localhost:3000
+      JWT_SECRET: ${JWT_SECRET:-homefix_local_dev_secret_change_me}
+    ports:
+      - "5000:5000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: homefix-client
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - server
+
+volumes:
+  mysql_data:
