@@ -37,6 +37,57 @@ const actionMap = {
   view_users: { label: 'View User Management', path: '/users' }
 };
 
+const allowedPaths = new Set([
+  '/',
+  '/appointments',
+  '/appointments?new=1',
+  '/payments',
+  '/profile',
+  '/providers',
+  '/reports',
+  '/reviews',
+  '/services',
+  '/users'
+]);
+
+function inferActionPathFromLabel(label = '') {
+  const text = String(label).toLowerCase();
+  if (text.includes('provider performance') || text.includes('provider feedback') || text.includes('rating')) {
+    return '/reports';
+  }
+  if (text.includes('payment') || text.includes('revenue')) return '/payments';
+  if (text.includes('appointment') || text.includes('booking')) return '/appointments';
+  if (text.includes('review')) return '/reviews';
+  if (text.includes('service')) return '/services';
+  if (text.includes('provider')) return '/providers';
+  if (text.includes('receiver') || text.includes('user')) return '/users';
+  return '/';
+}
+
+function normalizeActionPath(path = '', label = '') {
+  if (path === '/reports/provider-performance' || path === '/reports/provider-performance/export') {
+    return '/reports';
+  }
+  return allowedPaths.has(path) ? path : inferActionPathFromLabel(label);
+}
+
+function sanitizeActions(actions = []) {
+  const seen = new Set();
+  return actions
+    .filter((action) => action && action.label && action.path)
+    .map((action) => ({
+      label: action.label,
+      path: normalizeActionPath(action.path, action.label)
+    }))
+    .filter((action) => {
+      if (seen.has(action.path)) {
+        return false;
+      }
+      seen.add(action.path);
+      return true;
+    });
+}
+
 function actionsFromKeys(keys = []) {
   const seen = new Set();
   return keys
@@ -77,5 +128,6 @@ module.exports = {
   receiverSuggestedQuestions,
   managerSuggestedQuestions,
   actionsFromKeys,
+  sanitizeActions,
   dangerousInput
 };

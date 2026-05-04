@@ -445,7 +445,7 @@ export default function DashboardPage() {
           manager: [api.reports.providerPerformance(), Promise.resolve([]), Promise.resolve([])],
           provider: [
             Promise.resolve([]),
-            api.providers.services(user.provider_id),
+            user.provider_id ? api.providers.services(user.provider_id) : Promise.resolve([]),
             Promise.resolve([])
           ],
           receiver: [

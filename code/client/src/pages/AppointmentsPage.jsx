@@ -112,6 +112,7 @@ export default function AppointmentsPage() {
   const [searchParams] = useSearchParams();
   const canCreateAppointment = user.role === 'manager' || user.role === 'receiver';
   const [appointments, setAppointments] = React.useState([]);
+  const [reviews, setReviews] = React.useState([]);
   const [receivers, setReceivers] = React.useState([]);
   const [services, setServices] = React.useState([]);
   const [providers, setProviders] = React.useState([]);
@@ -142,12 +143,13 @@ export default function AppointmentsPage() {
     try {
       setLoading(true);
       setError('');
-      const requests = [api.appointments.list()];
+      const requests = [api.appointments.list(), api.reviews.list()];
       if (user.role === 'manager') {
         requests.push(api.receivers.list());
       }
-      const [appointmentRows, receiverRows = []] = await Promise.all(requests);
+      const [appointmentRows, reviewRows, receiverRows = []] = await Promise.all(requests);
       setAppointments(appointmentRows);
+      setReviews(reviewRows);
       setReceivers(receiverRows);
     } catch (err) {
       setError(err.message);
@@ -378,6 +380,17 @@ export default function AppointmentsPage() {
       return sortDirection === 'asc' ? left - right : right - left;
     });
 
+  function canRateAppointment(row) {
+    if (!['receiver', 'provider'].includes(user.role) || row.appointment_status !== 'completed') {
+      return false;
+    }
+    const direction = user.role === 'receiver' ? 'receiver_to_provider' : 'provider_to_receiver';
+    return !reviews.some((review) => (
+      Number(review.app_id) === Number(row.app_id)
+      && review.review_direction === direction
+    ));
+  }
+
   const columns = [
     { key: 'app_id', label: 'ID' },
     ...(user.role !== 'receiver' ? [{ key: 'receiver_name', label: 'Receiver' }] : []),
@@ -449,7 +462,7 @@ export default function AppointmentsPage() {
                 <Trash2 size={16} />
               </button>
             )}
-            {['provider', 'manager'].includes(user.role) && ['accepted', 'in_progress', 'completed'].includes(row.appointment_status) && (
+            {['provider', 'manager'].includes(user.role) && ['accepted', 'in_progress'].includes(row.appointment_status) && (
               <input
                 className="small-number"
                 type="number"
@@ -460,7 +473,7 @@ export default function AppointmentsPage() {
                 onBlur={(event) => updateActualHours(row.app_id, event.target.value)}
               />
             )}
-            {['receiver', 'provider'].includes(user.role) && row.appointment_status === 'completed' && (
+            {canRateAppointment(row) && (
               <button className="button mini" type="button" onClick={() => navigate(`/reviews?new=${row.app_id}`)}>
                 <MessageSquarePlus size={14} />
                 Rate

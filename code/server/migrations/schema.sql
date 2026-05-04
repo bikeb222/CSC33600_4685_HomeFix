@@ -130,7 +130,7 @@ CREATE TABLE Provider_Services (
         FOREIGN KEY (reviewed_by)
         REFERENCES Managers(manager_id)
         ON UPDATE CASCADE
-        ON DELETE SET NULL,
+        ON DELETE RESTRICT,
 
     CONSTRAINT chk_provider_services_rate
         CHECK (base_hourly_rate >= 0),
@@ -290,7 +290,10 @@ CREATE TABLE Payments (
                 'refunded',
                 'partially_refunded'
             )
-        )
+        ),
+
+    CONSTRAINT chk_payment_paid_date
+        CHECK (payment_status <> 'paid' OR payment_date IS NOT NULL)
 );
 
 CREATE INDEX idx_payments_status
@@ -324,6 +327,354 @@ CREATE TABLE Reviews (
     CONSTRAINT uq_review_once_per_direction
         UNIQUE (app_id, review_direction)
 );
+
+DELIMITER $$
+
+CREATE TRIGGER trg_receivers_user_role_before_insert
+BEFORE INSERT ON Receivers
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Users
+        WHERE user_id = NEW.user_id AND role = 'receiver'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Receivers.user_id must reference a user with role receiver';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_receivers_user_role_before_update
+BEFORE UPDATE ON Receivers
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Users
+        WHERE user_id = NEW.user_id AND role = 'receiver'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Receivers.user_id must reference a user with role receiver';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_providers_user_role_before_insert
+BEFORE INSERT ON Providers
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Users
+        WHERE user_id = NEW.user_id AND role = 'provider'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Providers.user_id must reference a user with role provider';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_providers_user_role_before_update
+BEFORE UPDATE ON Providers
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Users
+        WHERE user_id = NEW.user_id AND role = 'provider'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Providers.user_id must reference a user with role provider';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_managers_user_role_before_insert
+BEFORE INSERT ON Managers
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Users
+        WHERE user_id = NEW.user_id AND role = 'manager'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Managers.user_id must reference a user with role manager';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_managers_user_role_before_update
+BEFORE UPDATE ON Managers
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Users
+        WHERE user_id = NEW.user_id AND role = 'manager'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Managers.user_id must reference a user with role manager';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_provider_services_review_state_before_insert
+BEFORE INSERT ON Provider_Services
+FOR EACH ROW
+BEGIN
+    IF NEW.approval_status = 'pending'
+       AND (NEW.reviewed_by IS NOT NULL OR NEW.reviewed_at IS NOT NULL) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Pending provider services cannot have manager review fields';
+    END IF;
+
+    IF NEW.approval_status IN ('approved', 'rejected')
+       AND (NEW.reviewed_by IS NULL OR NEW.reviewed_at IS NULL) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Approved or rejected provider services require manager review fields';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_provider_services_review_state_before_update
+BEFORE UPDATE ON Provider_Services
+FOR EACH ROW
+BEGIN
+    IF NEW.approval_status = 'pending'
+       AND (NEW.reviewed_by IS NOT NULL OR NEW.reviewed_at IS NOT NULL) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Pending provider services cannot have manager review fields';
+    END IF;
+
+    IF NEW.approval_status IN ('approved', 'rejected')
+       AND (NEW.reviewed_by IS NULL OR NEW.reviewed_at IS NULL) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Approved or rejected provider services require manager review fields';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_appointments_business_rules_before_insert
+BEFORE INSERT ON Appointments
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Provider_Services
+        WHERE provider_id = NEW.provider_id
+          AND service_id = NEW.service_id
+          AND approval_status = 'approved'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Appointments require an approved provider-service pair';
+    END IF;
+
+    IF NEW.appointment_status IN ('pending', 'accepted', 'in_progress')
+       AND NOT EXISTS (
+           SELECT 1 FROM Providers
+           WHERE provider_id = NEW.provider_id
+             AND provider_status = 'active'
+       ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Active appointments require an active provider';
+    END IF;
+
+    IF NEW.appointment_status IN ('pending', 'accepted', 'in_progress')
+       AND EXISTS (
+           SELECT 1 FROM Appointments existing
+           WHERE existing.provider_id = NEW.provider_id
+             AND existing.appointment_status IN ('pending', 'accepted', 'in_progress')
+             AND NEW.scheduled_time < DATE_ADD(
+                 existing.scheduled_time,
+                 INTERVAL CEIL(COALESCE(existing.actual_hours, existing.estimated_hours) * 60) MINUTE
+             )
+             AND DATE_ADD(
+                 NEW.scheduled_time,
+                 INTERVAL CEIL(COALESCE(NEW.actual_hours, NEW.estimated_hours) * 60) MINUTE
+             ) > existing.scheduled_time
+       ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Provider already has an active appointment during this time';
+    END IF;
+
+    IF NEW.appointment_status IN ('pending', 'accepted', 'in_progress')
+       AND EXISTS (
+           SELECT 1 FROM Provider_Unavailable_Blocks block
+           WHERE block.provider_id = NEW.provider_id
+             AND NEW.scheduled_time < block.end_time
+             AND DATE_ADD(
+                 NEW.scheduled_time,
+                 INTERVAL CEIL(COALESCE(NEW.actual_hours, NEW.estimated_hours) * 60) MINUTE
+             ) > block.start_time
+       ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Provider is unavailable during this time';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_appointments_business_rules_before_update
+BEFORE UPDATE ON Appointments
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Provider_Services
+        WHERE provider_id = NEW.provider_id
+          AND service_id = NEW.service_id
+          AND approval_status = 'approved'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Appointments require an approved provider-service pair';
+    END IF;
+
+    IF NEW.appointment_status IN ('pending', 'accepted', 'in_progress')
+       AND NOT EXISTS (
+           SELECT 1 FROM Providers
+           WHERE provider_id = NEW.provider_id
+             AND provider_status = 'active'
+       ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Active appointments require an active provider';
+    END IF;
+
+    IF NEW.appointment_status IN ('pending', 'accepted', 'in_progress')
+       AND EXISTS (
+           SELECT 1 FROM Appointments existing
+           WHERE existing.provider_id = NEW.provider_id
+             AND existing.app_id <> NEW.app_id
+             AND existing.appointment_status IN ('pending', 'accepted', 'in_progress')
+             AND NEW.scheduled_time < DATE_ADD(
+                 existing.scheduled_time,
+                 INTERVAL CEIL(COALESCE(existing.actual_hours, existing.estimated_hours) * 60) MINUTE
+             )
+             AND DATE_ADD(
+                 NEW.scheduled_time,
+                 INTERVAL CEIL(COALESCE(NEW.actual_hours, NEW.estimated_hours) * 60) MINUTE
+             ) > existing.scheduled_time
+       ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Provider already has an active appointment during this time';
+    END IF;
+
+    IF NEW.appointment_status IN ('pending', 'accepted', 'in_progress')
+       AND EXISTS (
+           SELECT 1 FROM Provider_Unavailable_Blocks block
+           WHERE block.provider_id = NEW.provider_id
+             AND NEW.scheduled_time < block.end_time
+             AND DATE_ADD(
+                 NEW.scheduled_time,
+                 INTERVAL CEIL(COALESCE(NEW.actual_hours, NEW.estimated_hours) * 60) MINUTE
+             ) > block.start_time
+       ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Provider is unavailable during this time';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_provider_unavailable_blocks_before_insert
+BEFORE INSERT ON Provider_Unavailable_Blocks
+FOR EACH ROW
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM Provider_Unavailable_Blocks existing
+        WHERE existing.provider_id = NEW.provider_id
+          AND NEW.start_time < existing.end_time
+          AND NEW.end_time > existing.start_time
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Provider unavailable blocks cannot overlap';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM Appointments a
+        WHERE a.provider_id = NEW.provider_id
+          AND a.appointment_status IN ('pending', 'accepted', 'in_progress')
+          AND a.scheduled_time < NEW.end_time
+          AND DATE_ADD(
+              a.scheduled_time,
+              INTERVAL CEIL(COALESCE(a.actual_hours, a.estimated_hours) * 60) MINUTE
+          ) > NEW.start_time
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Unavailable block overlaps an active appointment';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_provider_unavailable_blocks_before_update
+BEFORE UPDATE ON Provider_Unavailable_Blocks
+FOR EACH ROW
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM Provider_Unavailable_Blocks existing
+        WHERE existing.provider_id = NEW.provider_id
+          AND existing.block_id <> NEW.block_id
+          AND NEW.start_time < existing.end_time
+          AND NEW.end_time > existing.start_time
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Provider unavailable blocks cannot overlap';
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM Appointments a
+        WHERE a.provider_id = NEW.provider_id
+          AND a.appointment_status IN ('pending', 'accepted', 'in_progress')
+          AND a.scheduled_time < NEW.end_time
+          AND DATE_ADD(
+              a.scheduled_time,
+              INTERVAL CEIL(COALESCE(a.actual_hours, a.estimated_hours) * 60) MINUTE
+          ) > NEW.start_time
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Unavailable block overlaps an active appointment';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_payments_completed_appointment_before_insert
+BEFORE INSERT ON Payments
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Appointments
+        WHERE app_id = NEW.app_id
+          AND appointment_status = 'completed'
+          AND actual_hours IS NOT NULL
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Payments require a completed appointment with actual hours';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_payments_completed_appointment_before_update
+BEFORE UPDATE ON Payments
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Appointments
+        WHERE app_id = NEW.app_id
+          AND appointment_status = 'completed'
+          AND actual_hours IS NOT NULL
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Payments require a completed appointment with actual hours';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_reviews_completed_appointment_before_insert
+BEFORE INSERT ON Reviews
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Appointments
+        WHERE app_id = NEW.app_id
+          AND appointment_status = 'completed'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Reviews require a completed appointment';
+    END IF;
+END$$
+
+CREATE TRIGGER trg_reviews_completed_appointment_before_update
+BEFORE UPDATE ON Reviews
+FOR EACH ROW
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM Appointments
+        WHERE app_id = NEW.app_id
+          AND appointment_status = 'completed'
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Reviews require a completed appointment';
+    END IF;
+END$$
+
+DELIMITER ;
 
 CREATE OR REPLACE VIEW vw_tableau_appointment_report AS
 SELECT

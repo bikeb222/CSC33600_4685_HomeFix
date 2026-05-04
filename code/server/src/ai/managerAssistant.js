@@ -2,7 +2,7 @@ const { generateAiResponse, configuredProvider } = require('./aiProvider');
 const { classifyIntent } = require('./intentClassifier');
 const { buildContext, compactConversation } = require('./contextBuilder');
 const { systemPromptFor } = require('./promptBuilder');
-const { actionsFromKeys, dangerousInput, securityRefusal, managerFallback } = require('./responseTemplates');
+const { actionsFromKeys, sanitizeActions, dangerousInput, securityRefusal, managerFallback } = require('./responseTemplates');
 const analytics = require('./safeAnalyticsQueries');
 
 async function dataForIntent(intent) {
@@ -144,7 +144,7 @@ async function answer({ message, conversation = [] }) {
     answer: aiResult.answer || managerFallback,
     sources: sourceList(data, aiResult),
     metrics: data[Object.keys(data)[0]],
-    suggested_actions: aiResult.suggested_actions?.length ? aiResult.suggested_actions : defaultActions,
+    suggested_actions: sanitizeActions(aiResult.suggested_actions?.length ? aiResult.suggested_actions : defaultActions),
     intent
   };
 }

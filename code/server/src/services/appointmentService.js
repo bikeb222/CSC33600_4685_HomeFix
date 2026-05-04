@@ -134,8 +134,8 @@ async function updateActualHours(id, actualHours) {
   const appointmentId = normalizeId(id, 'app_id');
   const normalizedHours = assertPositiveNumber(actualHours, 'actual_hours');
   const appointment = await getById(appointmentId);
-  if (!['accepted', 'in_progress', 'completed'].includes(appointment.appointment_status)) {
-    throw new AppError('Actual service hours can only be set after the provider accepts the appointment', 400);
+  if (!['accepted', 'in_progress'].includes(appointment.appointment_status)) {
+    throw new AppError('Actual service hours can only be changed before the appointment is completed', 400);
   }
   const affectedRows = await appointmentModel.updateActualHours(appointmentId, normalizedHours);
   if (!affectedRows) {

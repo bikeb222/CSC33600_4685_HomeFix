@@ -35,6 +35,11 @@ export default function PaymentsPage() {
   const [notice, setNotice] = React.useState('');
 
   const selectedAppointment = appointments.find((appointment) => String(appointment.app_id) === String(form.app_id));
+  const payableAppointments = appointments.filter((appointment) => (
+    appointment.appointment_status === 'completed'
+    && appointment.actual_hours
+    && !payments.some((payment) => Number(payment.app_id) === Number(appointment.app_id))
+  ));
   const baseAmount = Number(form.total_amount || selectedAppointment?.actual_total || selectedAppointment?.estimated_total || 0);
   const commissionRate = Number(form.commission_rate || 0);
 
@@ -151,7 +156,16 @@ export default function PaymentsPage() {
         title="Payments"
         description="Track wallet balance, completed appointment payments, commissions, and provider payouts."
         actions={user.role !== 'provider' && (
-          <button className="button primary" type="button" onClick={() => setModalOpen(true)}>
+          <button
+            className="button primary"
+            type="button"
+            onClick={() => {
+              setError('');
+              setNotice('');
+              setForm(emptyForm);
+              setModalOpen(true);
+            }}
+          >
             <CreditCard size={16} />
             New Payment
           </button>
@@ -248,8 +262,8 @@ export default function PaymentsPage() {
           <label>
             Appointment
             <select value={form.app_id} onChange={(event) => setForm((current) => ({ ...current, app_id: event.target.value }))} required>
-              <option value="">Select appointment</option>
-              {appointments.filter((appointment) => appointment.appointment_status === 'completed').map((appointment) => (
+              <option value="">{payableAppointments.length ? 'Select appointment' : 'No unpaid completed appointments'}</option>
+              {payableAppointments.map((appointment) => (
                 <option key={appointment.app_id} value={appointment.app_id}>
                   #{appointment.app_id} {appointment.receiver_name} - {appointment.service_name} ({currency(appointment.actual_total || appointment.estimated_total)})
                 </option>
@@ -294,7 +308,7 @@ export default function PaymentsPage() {
           </div>
           <div className="form-actions end">
             <button className="button ghost" type="button" onClick={() => setModalOpen(false)}>Cancel</button>
-            <button className="button primary" type="submit" disabled={submitting}>
+            <button className="button primary" type="submit" disabled={submitting || !payableAppointments.length}>
               {submitting ? 'Creating...' : 'Create Payment'}
             </button>
           </div>

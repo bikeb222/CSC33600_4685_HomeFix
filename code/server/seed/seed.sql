@@ -88,7 +88,7 @@ INSERT INTO Appointments (
     receiver_id, provider_id, service_id, address_id, appointment_status,
     scheduled_time, hourly_rate_at_booking, schedule_surcharge_rate, schedule_surcharge_reason, estimated_hours, actual_hours
 ) VALUES
-(1, 1, 1, 1, 'completed', '2026-05-05 09:00:00', 68.00, 0.0000, 'standard_hours', 2.00, 2.00),
+(1, 1, 1, 1, 'completed', '2026-05-02 09:00:00', 68.00, 0.0000, 'standard_hours', 2.00, 2.00),
 (1, 4, 4, 2, 'pending', '2026-05-08 13:00:00', 58.00, 0.0000, 'standard_hours', 4.00, NULL),
 (2, 2, 2, 3, 'accepted', '2026-05-06 11:30:00', 82.00, 0.0000, 'standard_hours', 1.50, NULL),
 (2, 1, 4, 4, 'completed', '2026-04-28 10:00:00', 52.00, 0.0000, 'standard_hours', 3.00, 3.00),
@@ -97,10 +97,10 @@ INSERT INTO Appointments (
 (4, 2, 1, 7, 'cancelled', '2026-05-01 08:00:00', 75.00, 0.0000, 'standard_hours', 1.00, NULL),
 (4, 4, 3, 8, 'pending', '2026-05-11 12:00:00', 48.00, 0.0000, 'standard_hours', 3.50, NULL),
 (5, 5, 5, 9, 'completed', '2026-04-25 09:30:00', 60.50, 0.1000, 'weekend', 2.25, 2.25),
-(5, 3, 3, 10, 'accepted', '2026-05-09 16:00:00', 58.50, 0.3000, 'weekend_after_hours', 2.00, NULL);
+(5, 4, 3, 10, 'accepted', '2026-05-09 16:00:00', 62.40, 0.3000, 'weekend_after_hours', 2.00, NULL);
 
 INSERT INTO Payments (app_id, total_amount, commission_rate, payment_status, payment_date) VALUES
-(1, 136.00, 0.1500, 'paid', '2026-05-05 12:10:00'),
+(1, 136.00, 0.1500, 'paid', '2026-05-02 12:10:00'),
 (4, 156.00, 0.1500, 'paid', '2026-04-28 14:00:00'),
 (5, 112.50, 0.1200, 'paid', '2026-04-29 17:20:00'),
 (9, 136.13, 0.1500, 'paid', '2026-04-25 13:45:00');

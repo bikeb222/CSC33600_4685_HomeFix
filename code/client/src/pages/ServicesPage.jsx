@@ -48,13 +48,16 @@ export default function ServicesPage() {
       setError('');
       const serviceRows = await api.services.list();
       setServices(serviceRows);
-      if (user.role === 'provider') {
+      if (user.role === 'provider' && user.provider_id) {
         const [providerServiceRows, blockRows] = await Promise.all([
           api.providers.services(user.provider_id),
           api.providers.unavailableBlocks(user.provider_id)
         ]);
         setMyServices(providerServiceRows);
         setUnavailableBlocks(blockRows);
+      } else if (user.role === 'provider') {
+        setMyServices([]);
+        setUnavailableBlocks([]);
       }
       if (user.role === 'manager') {
         setApprovals(await api.providers.serviceApprovals());

@@ -56,9 +56,22 @@ export default function ReviewsPage() {
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState('');
   const [notice, setNotice] = React.useState('');
-  const directionOptions = directionOptionsForRole(user.role);
+  const directionOptions = React.useMemo(() => directionOptionsForRole(user.role), [user.role]);
+  const canCreateReview = user.role !== 'manager';
+  const activeDirection = user.role === 'manager' ? form.review_direction : directionOptions[0];
 
   const completedAppointments = appointments.filter((appointment) => appointment.appointment_status === 'completed');
+  const reviewableAppointments = completedAppointments.filter((appointment) => !reviews.some((review) => (
+    Number(review.app_id) === Number(appointment.app_id)
+    && review.review_direction === activeDirection
+  )));
+
+  function closeModal() {
+    setSubmitting(false);
+    setError('');
+    setForm({ ...emptyForm, review_direction: directionOptions[0] });
+    setModalOpen(false);
+  }
 
   async function load() {
     try {
@@ -84,11 +97,18 @@ export default function ReviewsPage() {
   React.useEffect(() => {
     const appId = searchParams.get('new');
     if (appId && appointments.length > 0) {
-      setForm({ ...emptyForm, app_id: appId, review_direction: directionOptions[0] });
-      setModalOpen(true);
+      const direction = directionOptions[0];
+      const canReviewAppointment = completedAppointments.some((appointment) => Number(appointment.app_id) === Number(appId))
+        && !reviews.some((review) => Number(review.app_id) === Number(appId) && review.review_direction === direction);
+      if (canReviewAppointment) {
+        setForm({ ...emptyForm, app_id: appId, review_direction: direction });
+        setModalOpen(true);
+      } else {
+        setError('This completed appointment has already been reviewed for your role.');
+      }
       navigate('/reviews', { replace: true });
     }
-  }, [searchParams, appointments, directionOptions, navigate]);
+  }, [searchParams, appointments, reviews, completedAppointments, directionOptions, navigate]);
 
   async function submit(event) {
     event.preventDefault();
@@ -155,7 +175,10 @@ export default function ReviewsPage() {
           <button
             className="button primary"
             type="button"
+            disabled={!canCreateReview}
             onClick={() => {
+              setError('');
+              setNotice('');
               setForm({ ...emptyForm, review_direction: directionOptions[0] });
               setModalOpen(true);
             }}
@@ -217,14 +240,14 @@ export default function ReviewsPage() {
         open={modalOpen}
         title="Create Review"
         description="Reviews are limited to one record per appointment and direction."
-        onClose={() => setModalOpen(false)}
+        onClose={closeModal}
       >
         <form onSubmit={submit} className="form-grid">
           <label>
             Completed Appointment
             <select value={form.app_id} onChange={(event) => setForm((current) => ({ ...current, app_id: event.target.value }))} required>
-              <option value="">Select completed appointment</option>
-              {completedAppointments.map((appointment) => (
+              <option value="">{reviewableAppointments.length ? 'Select completed appointment' : 'No reviewable completed appointments'}</option>
+              {reviewableAppointments.map((appointment) => (
                 <option key={appointment.app_id} value={appointment.app_id}>
                   #{appointment.app_id} {appointment.receiver_name} - {appointment.provider_name} - {appointment.service_name}
                 </option>
@@ -250,8 +273,8 @@ export default function ReviewsPage() {
             <textarea rows="4" value={form.comment} onChange={(event) => setForm((current) => ({ ...current, comment: event.target.value }))} />
           </label>
           <div className="form-actions end">
-            <button className="button ghost" type="button" onClick={() => setModalOpen(false)}>Cancel</button>
-            <button className="button primary" type="submit" disabled={submitting}>
+            <button className="button ghost" type="button" onClick={closeModal}>Cancel</button>
+            <button className="button primary" type="submit" disabled={submitting || !reviewableAppointments.length}>
               {submitting ? 'Creating...' : 'Create Review'}
             </button>
           </div>

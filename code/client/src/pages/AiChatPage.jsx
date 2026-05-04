@@ -49,17 +49,51 @@ function SourceList({ sources = [] }) {
   );
 }
 
+function fallbackActionPathFromLabel(label = '') {
+  const text = String(label).toLowerCase();
+  if (text.includes('provider performance') || text.includes('provider feedback') || text.includes('rating')) return '/reports';
+  if (text.includes('payment') || text.includes('revenue')) return '/payments';
+  if (text.includes('appointment') || text.includes('booking')) return '/appointments';
+  if (text.includes('review')) return '/reviews';
+  if (text.includes('service')) return '/services';
+  if (text.includes('provider')) return '/providers';
+  if (text.includes('receiver') || text.includes('user')) return '/users';
+  return '/';
+}
+
+function normalizedActionPath(path = '', label = '') {
+  if (path === '/reports/provider-performance' || path === '/reports/provider-performance/export') {
+    return '/reports';
+  }
+  const allowedPaths = new Set([
+    '/',
+    '/appointments',
+    '/appointments?new=1',
+    '/payments',
+    '/profile',
+    '/providers',
+    '/reports',
+    '/reviews',
+    '/services',
+    '/users'
+  ]);
+  return allowedPaths.has(path) ? path : fallbackActionPathFromLabel(label);
+}
+
 function SuggestedActions({ actions = [] }) {
   if (!actions.length) {
     return null;
   }
   return (
     <div className="ai-actions">
-      {actions.map((action) => (
-        <a className="button mini" href={action.path} key={`${action.label}-${action.path}`}>
+      {actions.map((action) => {
+        const path = normalizedActionPath(action.path, action.label);
+        return (
+        <a className="button mini" href={path} key={`${action.label}-${path}`}>
           {action.label}
         </a>
-      ))}
+        );
+      })}
     </div>
   );
 }

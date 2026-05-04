@@ -3,7 +3,7 @@ const { classifyIntent } = require('./intentClassifier');
 const { searchFaq } = require('./faqSearch');
 const { buildContext, compactConversation } = require('./contextBuilder');
 const { systemPromptFor } = require('./promptBuilder');
-const { actionsFromKeys, dangerousInput, securityRefusal, receiverFallback } = require('./responseTemplates');
+const { actionsFromKeys, sanitizeActions, dangerousInput, securityRefusal, receiverFallback } = require('./responseTemplates');
 const receiverQueries = require('./safeReceiverQueries');
 
 async function dataForIntent(intent, receiverId, message) {
@@ -134,7 +134,7 @@ async function answer({ user, message, conversation = [] }) {
   return {
     answer: aiResult.answer || faqMatches[0]?.answer || receiverFallback,
     sources: sourceList(faqMatches, data, aiResult),
-    suggested_actions: aiResult.suggested_actions?.length ? aiResult.suggested_actions : defaultActions,
+    suggested_actions: sanitizeActions(aiResult.suggested_actions?.length ? aiResult.suggested_actions : defaultActions),
     intent
   };
 }
