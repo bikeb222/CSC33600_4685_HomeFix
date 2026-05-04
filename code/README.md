@@ -18,6 +18,7 @@ This README is written for teammates who need to run, test, demo, or continue de
 - [Run With Docker](#run-with-docker)
 - [Run Locally For Development](#run-locally-for-development)
 - [API Reference](#api-reference)
+- [AI Assistant Features](#ai-assistant-features)
 - [Reporting And Tableau](#reporting-and-tableau)
 - [Seed Data](#seed-data)
 - [Testing Checklist](#testing-checklist)
@@ -402,6 +403,10 @@ PORT=5000
 CLIENT_URL=http://localhost:5173
 VITE_API_BASE_URL=http://localhost:5000/api
 JWT_SECRET=replace_this_with_a_long_random_secret
+AI_PROVIDER=mock
+AI_API_KEY=
+AI_MODEL=
+AI_BASE_URL=
 ```
 
 Docker Compose sets most values directly for container-to-container communication.
@@ -410,6 +415,7 @@ The local MySQL host port is intentionally `33306` because `3306` and `3307` are
 Important notes:
 
 - Never commit real hosted database passwords.
+- Never commit real AI API keys.
 - Set a real `JWT_SECRET` outside local development.
 - Put real PlanetScale, Aiven, or other hosted database credentials in `.env`.
 - If deploying the front end separately, set `VITE_API_BASE_URL` to the deployed back-end API URL.
@@ -1009,6 +1015,79 @@ Check:
 
 This is often expected because of foreign key restrictions. For example, a provider, receiver, or service referenced by appointments may not be deletable. This protects database integrity.
 
+## AI Assistant Features
+
+Homefix includes two role-based AI modules:
+
+- Receiver AI Customer Service at `/ai-support`
+- Manager AI Assistant at `/ai-assistant`
+
+The front end never calls Gemini or Kimi directly. It only calls Homefix back-end endpoints:
+
+- `POST /api/ai/receiver/chat`
+- `POST /api/ai/manager/chat`
+
+### AI Provider Configuration
+
+The back end uses a provider adapter in `server/src/ai/aiProvider.js`.
+
+Supported providers:
+
+- `AI_PROVIDER=mock`: local template answers, no external API key required.
+- `AI_PROVIDER=gemini`: calls Gemini when `AI_API_KEY` is set.
+- `AI_PROVIDER=kimi`: calls Kimi/Moonshot when `AI_API_KEY` is set.
+
+Environment variables:
+
+```env
+AI_PROVIDER=mock
+AI_API_KEY=
+AI_MODEL=
+AI_BASE_URL=
+```
+
+If `AI_API_KEY` is missing or the external AI call fails, the system falls back to the mock provider so local Docker runs do not break.
+
+### Receiver AI
+
+Receiver AI uses FAQ grounding from `server/src/data/receiverFaq.json`, the current receiver's own appointments/payments/addresses/reviews, and public provider/service data.
+
+Receiver AI cannot access another receiver's private data, return `password_hash`, expose API keys or JWT secrets, execute SQL, or modify records.
+
+To add FAQ content, edit `server/src/data/receiverFaq.json`. Each item has `id`, `category`, `questions`, `keywords`, `answer`, and `related_actions`.
+
+### Manager AI
+
+Manager AI uses predefined safe analytics queries from `server/src/ai/safeAnalyticsQueries.js`.
+
+It can answer questions about receiver/provider/service counts, appointment status distribution, pending/completed/cancelled appointments, revenue, unpaid amount, commission, provider payout, provider performance, popular services, reviews, completed appointments without payment, and receiver activity.
+
+Manager AI cannot execute arbitrary SQL from user input, run write operations, return authentication secrets, or modify database records.
+
+### AI Safety Design
+
+```text
+User message
+-> Auth and role check
+-> Intent classifier
+-> FAQ retrieval
+-> Safe data resolver
+-> Context builder
+-> AI provider adapter
+-> Response formatter
+-> Frontend chat UI
+```
+
+Safety constraints:
+
+- User input is never concatenated into SQL.
+- All database access uses predefined functions with parameterized queries.
+- Receiver AI is scoped to `req.user.receiver_id`.
+- Manager AI only uses whitelisted analytics functions.
+- Conversation history is length-limited.
+- Prompt injection and SQL-like dangerous requests return a safe refusal.
+- AI API keys live only in server environment variables.
+
 ## Deployment Notes
 
 Recommended free or low-cost deployment split:
@@ -1033,6 +1112,10 @@ DB_PASSWORD=your-aiven-password
 DB_NAME=homefix
 PORT=5000
 CLIENT_URL=https://your-netlify-site.netlify.app
+AI_PROVIDER=mock
+AI_API_KEY=
+AI_MODEL=
+AI_BASE_URL=
 ```
 
 Deployment reminders:

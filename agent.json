@@ -76,7 +76,8 @@
         "reviews": "code/client/src/pages/ReviewsPage.jsx",
         "reports": "code/client/src/pages/ReportsPage.jsx",
         "users": "code/client/src/pages/UserManagementPage.jsx",
-        "profile": "code/client/src/pages/ProfilePage.jsx"
+        "profile": "code/client/src/pages/ProfilePage.jsx",
+        "ai_chat": "code/client/src/pages/AiChatPage.jsx"
       }
     },
     "backend": {
@@ -98,7 +99,8 @@
         "services": "code/server/src/services",
         "models": "code/server/src/models",
         "middleware": "code/server/src/middleware",
-        "utils": "code/server/src/utils"
+        "utils": "code/server/src/utils",
+        "ai": "code/server/src/ai"
       }
     },
     "database": {
@@ -126,6 +128,16 @@
     }
   },
   "business_rules": {
+    "ai": {
+      "receiver_page": "/ai-support",
+      "manager_page": "/ai-assistant",
+      "receiver_api": "POST /api/ai/receiver/chat",
+      "manager_api": "POST /api/ai/manager/chat",
+      "provider_adapter": "code/server/src/ai/aiProvider.js",
+      "faq_json": "code/server/src/data/receiverFaq.json",
+      "default_provider": "mock",
+      "safety": "AI never executes arbitrary SQL. Receiver AI is scoped to current receiver data. Manager AI uses whitelisted analytics functions."
+    },
     "roles": {
       "manager": "Can manage users, receivers, providers, services, appointments, payments, reports, and provider skill approvals. Cannot create reviews.",
       "receiver": "Can book appointments for self, manage own addresses/profile, recharge own wallet, pay completed appointments, and review providers.",
@@ -216,6 +228,11 @@
         "GET /api/reports/appointments/export",
         "GET /api/reports/payments/export",
         "GET /api/reports/provider-performance/export"
+      ]
+      ,
+      "ai": [
+        "POST /api/ai/receiver/chat",
+        "POST /api/ai/manager/chat"
       ]
     }
   },

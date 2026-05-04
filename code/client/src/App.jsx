@@ -15,6 +15,7 @@ import RegisterPage from './pages/RegisterPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import ProfilePage from './pages/ProfilePage';
 import UserManagementPage from './pages/UserManagementPage';
+import AiChatPage from './pages/AiChatPage';
 
 export default function App() {
   return (
@@ -30,6 +31,10 @@ export default function App() {
             <Route path="receivers" element={<ReceiversPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="users" element={<UserManagementPage />} />
+            <Route path="ai-assistant" element={<AiChatPage mode="manager" />} />
+          </Route>
+          <Route element={<RoleRoute roles={['receiver']} />}>
+            <Route path="ai-support" element={<AiChatPage mode="receiver" />} />
           </Route>
           <Route path="providers" element={<ProvidersPage />} />
           <Route path="services" element={<ServicesPage />} />

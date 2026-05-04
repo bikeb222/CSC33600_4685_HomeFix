@@ -11,6 +11,7 @@ const paymentRoutes = require('./paymentRoutes');
 const reviewRoutes = require('./reviewRoutes');
 const reportRoutes = require('./reportRoutes');
 const dashboardRoutes = require('./dashboardRoutes');
+const aiRoutes = require('./aiRoutes');
 const { authenticate } = require('../middleware/auth');
 
 router.get('/health', (req, res) => {
@@ -20,6 +21,7 @@ router.get('/health', (req, res) => {
 router.use('/auth', authRoutes);
 router.use(authenticate);
 router.use('/dashboard', dashboardRoutes);
+router.use('/ai', aiRoutes);
 router.use(addressRoutes);
 router.use(appointmentRoutes);
 router.use(paymentRoutes);

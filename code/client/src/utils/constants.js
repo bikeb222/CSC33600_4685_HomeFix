@@ -3,7 +3,9 @@ import {
   CalendarClock,
   CreditCard,
   FileSpreadsheet,
+  Headset,
   LayoutDashboard,
+  MessagesSquare,
   ShieldCheck,
   Star,
   Users,
@@ -82,8 +84,24 @@ export const navItems = [
   }
 ];
 
+const aiSupportItem = {
+  path: '/ai-support',
+  label: 'AI Support',
+  icon: Headset,
+  title: 'AI Support',
+  subtitle: 'Ask customer service questions grounded in FAQ, your own data, and public service information.'
+};
+
+const aiAssistantItem = {
+  path: '/ai-assistant',
+  label: 'AI Assistant',
+  icon: MessagesSquare,
+  title: 'AI Assistant',
+  subtitle: 'Ask safe analytics questions about platform operations and performance.'
+};
+
 export const roleNavItems = {
-  manager: navItems,
+  manager: [...navItems, aiAssistantItem],
   provider: [
     navItems[0],
     { ...navItems[2], label: 'My Profile', path: '/profile', icon: ShieldCheck, title: 'My Profile', subtitle: 'Manage your provider account and contact details.' },
@@ -98,6 +116,7 @@ export const roleNavItems = {
     { ...navItems[3], label: 'Book Service' },
     { ...navItems[4], label: 'My Appointments' },
     { ...navItems[5], label: 'My Payments' },
-    { ...navItems[6], label: 'My Reviews' }
+    { ...navItems[6], label: 'My Reviews' },
+    aiSupportItem
   ]
 };
