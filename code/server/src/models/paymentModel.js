@@ -91,6 +91,12 @@ async function create(payment) {
   return result.insertId;
 }
 
+async function createWithProcedure(appId, commissionRate) {
+  const resultSets = await query('CALL sp_create_payment_for_completed_appointment(?, ?)', [appId, commissionRate]);
+  const paymentRow = Array.isArray(resultSets?.[0]) ? resultSets[0][0] : resultSets?.[0];
+  return paymentRow?.payment_id;
+}
+
 async function updateStatus(id, status) {
   const result = await query(`
     UPDATE Payments
@@ -112,5 +118,6 @@ module.exports = {
   findByAppId,
   appointmentForPayment,
   create,
+  createWithProcedure,
   updateStatus
 };

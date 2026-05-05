@@ -31,6 +31,7 @@ export default function ProvidersPage() {
   const [providerServices, setProviderServices] = React.useState([]);
   const [appointments, setAppointments] = React.useState([]);
   const [reviews, setReviews] = React.useState([]);
+  const [allUnavailableBlocks, setAllUnavailableBlocks] = React.useState([]);
   const [form, setForm] = React.useState(emptyProvider);
   const [linkForm, setLinkForm] = React.useState(emptyLink);
   const [editingId, setEditingId] = React.useState(null);
@@ -50,6 +51,17 @@ export default function ProvidersPage() {
       ]);
       setProviders(providerRows);
       setServices(serviceRows);
+      const blockGroups = await Promise.all(
+        providerRows.map(async (provider) => {
+          const blocks = await api.providers.unavailableBlocks(provider.provider_id);
+          return blocks.map((block) => ({
+            ...block,
+            provider_name: provider.username,
+            provider_email: provider.email
+          }));
+        })
+      );
+      setAllUnavailableBlocks(blockGroups.flat());
     } catch (err) {
       setError(err.message);
     }
@@ -171,7 +183,11 @@ export default function ProvidersPage() {
   const filteredProviders = providers.filter((provider) => {
     const haystack = [provider.username, provider.email, provider.phone, provider.biography, provider.provider_status].join(' ').toLowerCase();
     return (!search || haystack.includes(search.toLowerCase())) && (!statusFilter || provider.provider_status === statusFilter);
-  });
+  }).sort((a, b) => Number(a.provider_id) - Number(b.provider_id));
+  const sortedUnavailableBlocks = React.useMemo(
+    () => [...allUnavailableBlocks].sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()),
+    [allUnavailableBlocks]
+  );
 
   return (
     <div className="page-stack">
@@ -285,7 +301,7 @@ export default function ProvidersPage() {
               <p>{selected.email}</p>
             </div>
           </div>
-          <div className="detail-grid three">
+          <div className="detail-stack">
             <div>
               <h3>Services</h3>
               <form className="inline-form" onSubmit={addService}>
@@ -379,6 +395,24 @@ export default function ProvidersPage() {
           </div>
         </section>
         )}
+
+      <DataTable
+        title="Provider Unavailable Time"
+        description="All manually blocked provider times across the platform."
+        className="wide-panel"
+        rows={sortedUnavailableBlocks}
+        rowKey="block_id"
+        columns={[
+          { key: 'block_id', label: 'ID' },
+          { key: 'provider_name', label: 'Provider' },
+          { key: 'provider_email', label: 'Email' },
+          { key: 'start_time', label: 'Start', render: (row) => shortDateTime(row.start_time) },
+          { key: 'end_time', label: 'End', render: (row) => shortDateTime(row.end_time) },
+          { key: 'reason', label: 'Reason', render: (row) => row.reason || 'Unavailable' }
+        ]}
+        emptyTitle="No unavailable time blocks"
+        emptyDescription="Providers have not added any manual unavailable time."
+      />
       </div>
       <ConfirmDialog
         open={Boolean(deleteTarget)}

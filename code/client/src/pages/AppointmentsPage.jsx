@@ -364,6 +364,7 @@ export default function AppointmentsPage() {
   const filteredAppointments = appointments
     .filter((appointment) => {
       const haystack = [
+        appointment.app_id,
         appointment.receiver_name,
         appointment.provider_name,
         appointment.service_name,

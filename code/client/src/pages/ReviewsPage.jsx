@@ -164,6 +164,25 @@ export default function ReviewsPage() {
       (!directionFilter || review.review_direction === directionFilter)
     );
   });
+  const receiverToProviderReviews = filteredReviews.filter((review) => review.review_direction === 'receiver_to_provider');
+  const providerToReceiverReviews = filteredReviews.filter((review) => review.review_direction === 'provider_to_receiver');
+  const reviewColumns = [
+    { key: 'review_id', label: 'ID' },
+    { key: 'app_id', label: 'Appointment' },
+    { key: 'receiver_name', label: 'Receiver' },
+    { key: 'provider_name', label: 'Provider' },
+    { key: 'service_name', label: 'Service' },
+    { key: 'rating', label: 'Rating', render: (row) => <RatingStars value={row.rating} /> },
+    { key: 'review_direction', label: 'Direction', render: (row) => <StatusBadge value={row.review_direction} /> },
+    { key: 'comment', label: 'Comment' }
+  ];
+  const reviewActions = user.role === 'manager'
+    ? (row) => (
+      <button className="icon-button danger" type="button" onClick={() => setDeleteTarget(row)} aria-label="Delete review">
+        <Trash2 size={16} />
+      </button>
+    )
+    : null;
 
   return (
     <div className="page-stack">
@@ -210,31 +229,33 @@ export default function ReviewsPage() {
         )}
       />
 
-      <DataTable
-        title="Review List"
-        rows={filteredReviews}
-        rowKey="review_id"
-        loading={loading}
-        columns={[
-          { key: 'review_id', label: 'ID' },
-          { key: 'app_id', label: 'Appointment' },
-          { key: 'receiver_name', label: 'Receiver' },
-          { key: 'provider_name', label: 'Provider' },
-          { key: 'service_name', label: 'Service' },
-          { key: 'rating', label: 'Rating', render: (row) => <RatingStars value={row.rating} /> },
-          { key: 'review_direction', label: 'Direction', render: (row) => <StatusBadge value={row.review_direction} /> },
-          { key: 'comment', label: 'Comment' }
-        ]}
-        actions={user.role === 'manager'
-          ? (row) => (
-            <button className="icon-button danger" type="button" onClick={() => setDeleteTarget(row)} aria-label="Delete review">
-              <Trash2 size={16} />
-            </button>
-          )
-          : null}
-        emptyTitle="No reviews found"
-        emptyDescription="Create a review for a completed appointment or adjust filters."
-      />
+      {(!directionFilter || directionFilter === 'receiver_to_provider') && (
+        <DataTable
+          title="Receiver To Provider Reviews"
+          description="Feedback written by receivers about provider service quality."
+          rows={receiverToProviderReviews}
+          rowKey="review_id"
+          loading={loading}
+          columns={reviewColumns}
+          actions={reviewActions}
+          emptyTitle="No receiver-to-provider reviews found"
+          emptyDescription="Create a review for a completed appointment or adjust filters."
+        />
+      )}
+
+      {(!directionFilter || directionFilter === 'provider_to_receiver') && (
+        <DataTable
+          title="Provider To Receiver Reviews"
+          description="Feedback written by providers about receiver cooperation."
+          rows={providerToReceiverReviews}
+          rowKey="review_id"
+          loading={loading}
+          columns={reviewColumns}
+          actions={reviewActions}
+          emptyTitle="No provider-to-receiver reviews found"
+          emptyDescription="Create a review for a completed appointment or adjust filters."
+        />
+      )}
 
       <Modal
         open={modalOpen}

@@ -41,6 +41,10 @@ export default function ServicesPage() {
     const existingSkillIds = new Set(myServices.map((service) => String(service.service_id)));
     return services.filter((service) => !existingSkillIds.has(String(service.service_id)));
   }, [myServices, services]);
+  const sortedServices = React.useMemo(
+    () => [...services].sort((a, b) => Number(a.service_id) - Number(b.service_id)),
+    [services]
+  );
 
   async function load() {
     try {
@@ -316,7 +320,7 @@ export default function ServicesPage() {
       <DataTable
         title="Service List"
         description="Each service can be offered by many providers at different hourly rates."
-        rows={services}
+        rows={sortedServices}
         rowKey="service_id"
         loading={loading}
         searchFields={['service_name', 'description']}

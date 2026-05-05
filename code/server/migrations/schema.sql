@@ -4,6 +4,9 @@ CREATE DATABASE IF NOT EXISTS homefix
 
 USE homefix;
 
+DROP PROCEDURE IF EXISTS sp_create_payment_for_completed_appointment;
+DROP PROCEDURE IF EXISTS sp_receiver_recharge;
+
 DROP TABLE IF EXISTS Reviews;
 DROP TABLE IF EXISTS Payments;
 DROP TABLE IF EXISTS Appointments;
@@ -672,6 +675,102 @@ BEGIN
         SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'Reviews require a completed appointment';
     END IF;
+END$$
+
+CREATE PROCEDURE sp_create_payment_for_completed_appointment(
+    IN p_app_id INT,
+    IN p_commission_rate DECIMAL(5,4)
+)
+BEGIN
+    DECLARE v_receiver_id INT DEFAULT NULL;
+    DECLARE v_total_amount DECIMAL(10,2) DEFAULT 0.00;
+    DECLARE v_wallet_balance DECIMAL(10,2) DEFAULT 0.00;
+    DECLARE v_payment_id INT DEFAULT NULL;
+    DECLARE v_matching_count INT DEFAULT 0;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+
+    IF p_commission_rate IS NULL OR p_commission_rate < 0 OR p_commission_rate > 1 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'commission_rate must be between 0 and 1';
+    END IF;
+
+    SELECT COUNT(*)
+    INTO v_matching_count
+    FROM Appointments
+    WHERE app_id = p_app_id
+      AND appointment_status = 'completed'
+      AND actual_hours IS NOT NULL;
+
+    IF v_matching_count = 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Payment procedure requires a completed appointment with actual hours';
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM Payments WHERE app_id = p_app_id) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'This appointment already has a payment';
+    END IF;
+
+    START TRANSACTION;
+
+    SELECT receiver_id, actual_total
+    INTO v_receiver_id, v_total_amount
+    FROM Appointments
+    WHERE app_id = p_app_id
+    FOR UPDATE;
+
+    SELECT wallet_balance
+    INTO v_wallet_balance
+    FROM Receivers
+    WHERE receiver_id = v_receiver_id
+    FOR UPDATE;
+
+    IF v_wallet_balance < v_total_amount THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Receiver wallet balance is insufficient';
+    END IF;
+
+    UPDATE Receivers
+    SET wallet_balance = wallet_balance - v_total_amount
+    WHERE receiver_id = v_receiver_id;
+
+    INSERT INTO Payments (app_id, total_amount, commission_rate, payment_status, payment_date)
+    VALUES (p_app_id, v_total_amount, p_commission_rate, 'paid', CURRENT_TIMESTAMP);
+
+    SET v_payment_id = LAST_INSERT_ID();
+
+    COMMIT;
+
+    SELECT v_payment_id AS payment_id;
+END$$
+
+CREATE PROCEDURE sp_receiver_recharge(
+    IN p_receiver_id INT,
+    IN p_amount DECIMAL(10,2)
+)
+BEGIN
+    IF p_amount IS NULL OR p_amount <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Recharge amount must be greater than 0';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM Receivers WHERE receiver_id = p_receiver_id) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Receiver not found';
+    END IF;
+
+    UPDATE Receivers
+    SET wallet_balance = wallet_balance + p_amount
+    WHERE receiver_id = p_receiver_id;
+
+    SELECT receiver_id, wallet_balance
+    FROM Receivers
+    WHERE receiver_id = p_receiver_id;
 END$$
 
 DELIMITER ;

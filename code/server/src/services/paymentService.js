@@ -63,6 +63,11 @@ async function create(payload) {
     ? appointment.actual_total
     : assertNonNegativeNumber(payload.total_amount, 'total_amount');
 
+  if (paymentStatus === 'paid' && payload.total_amount === undefined) {
+    const id = await paymentModel.createWithProcedure(appId, commissionRate);
+    return paymentModel.findById(id);
+  }
+
   if (paymentStatus === 'paid') {
     const deducted = await receiverModel.adjustWallet(appointment.receiver_id, -totalAmount);
     if (!deducted) {
@@ -105,8 +110,8 @@ async function recharge(receiverId, amount) {
   if (normalizedAmount <= 0) {
     throw new AppError('amount must be greater than 0', 400);
   }
-  const affectedRows = await receiverModel.adjustWallet(normalizedReceiverId, normalizedAmount);
-  if (!affectedRows) {
+  const rechargedReceiverId = await receiverModel.rechargeWithProcedure(normalizedReceiverId, normalizedAmount);
+  if (!rechargedReceiverId) {
     throw new AppError('Receiver not found', 404);
   }
   return receiverModel.findById(normalizedReceiverId);

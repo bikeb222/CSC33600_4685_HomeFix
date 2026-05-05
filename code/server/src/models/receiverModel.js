@@ -81,11 +81,18 @@ async function adjustWallet(receiverId, amount) {
   return result.affectedRows;
 }
 
+async function rechargeWithProcedure(receiverId, amount) {
+  const resultSets = await query('CALL sp_receiver_recharge(?, ?)', [receiverId, amount]);
+  const receiverRow = Array.isArray(resultSets?.[0]) ? resultSets[0][0] : resultSets?.[0];
+  return receiverRow?.receiver_id;
+}
+
 module.exports = {
   list,
   findById,
   create,
   update,
   adjustWallet,
+  rechargeWithProcedure,
   remove
 };

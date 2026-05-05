@@ -71,6 +71,11 @@ export default function ReceiversPage() {
     load();
   }, []);
 
+  const sortedReceivers = React.useMemo(
+    () => [...receivers].sort((a, b) => Number(a.receiver_id) - Number(b.receiver_id)),
+    [receivers]
+  );
+
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
   }
@@ -219,7 +224,7 @@ export default function ReceiversPage() {
 
       <DataTable
         title="Receivers"
-        rows={receivers}
+        rows={sortedReceivers}
         rowKey="receiver_id"
         searchFields={['username', 'email', 'phone', 'language']}
         columns={[
@@ -262,7 +267,7 @@ export default function ReceiversPage() {
               <p>{selected.email}</p>
             </div>
           </div>
-          <div className="detail-grid">
+          <div className="detail-stack">
             <div>
               <h3>Addresses</h3>
               <form className="inline-form" onSubmit={addAddress}>

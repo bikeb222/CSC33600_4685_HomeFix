@@ -1,10 +1,10 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.2.8 Chrome/140.0.7339.240 Electron/38.4.0 Safari/537.36" version="28.2.8">
-  <diagram name="Homefix EER v4 - revenue, 2NF, AI" id="homefix-eer-v4-revenue-2nf-ai">
-    <mxGraphModel dx="3413" dy="1972" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2500" pageHeight="2250" math="0" shadow="0">
+  <diagram name="Homefix EER v5 - mandatory optional notation" id="homefix-eer-v5-mandatory-optional">
+    <mxGraphModel dx="2560" dy="1479" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2500" pageHeight="2250" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="title" value="Homefix EER v4" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=24;fontFamily=Verdana;fontStyle=1;" parent="1" vertex="1">
+        <mxCell id="title" value="Homefix ERD v5" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=24;fontFamily=Verdana;fontStyle=1;" parent="1" vertex="1">
           <mxGeometry x="30" y="25" width="320" height="40" as="geometry" />
         </mxCell>
         <mxCell id="users" value="Users" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
@@ -1092,45 +1092,46 @@
         <mxCell id="normalization_note" value="&lt;b&gt;Normalization Note&lt;/b&gt;&lt;br&gt;&lt;hr&gt;The design satisfies at least 2NF: every table uses atomic attributes, each non-key attribute depends on the whole primary key, and many-to-many data such as provider skills is separated into Provider_Services." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
           <mxGeometry x="1390" y="1860" width="560" height="140" as="geometry" />
         </mxCell>
-        <mxCell id="v4_update_note" value="&lt;b&gt;V4 Design Update&lt;/b&gt;&lt;br&gt;&lt;hr&gt;This version highlights revenue streams, 2NF compliance, provider scheduling constraints, manager approval for provider skills, actual-hours payment, and AI assistant boundaries." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
-          <mxGeometry x="90" y="1950" width="520" height="140" as="geometry" />
-        </mxCell>
         <mxCell id="ai_assistant_note" value="&lt;b&gt;AI Assistant Boundary&lt;/b&gt;&lt;br&gt;&lt;hr&gt;Receiver AI Customer Service uses FAQ grounding plus receiver-scoped safe queries for appointments, addresses, payments, reviews, and public provider/service data.&lt;br&gt;&lt;br&gt;Manager AI Assistant uses read-only safe analytics queries for revenue, commission, payment status, appointment status, provider performance, service popularity, and operational warnings.&lt;br&gt;&lt;br&gt;AI never executes generated SQL and API keys remain in backend environment variables." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
           <mxGeometry x="1390" y="2030" width="1080" height="190" as="geometry" />
         </mxCell>
-        <mxCell id="e_users_receivers" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERone;" parent="1" source="users" target="receivers" edge="1">
+        <mxCell id="e_users_receivers" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToOne;" parent="1" source="users" target="receivers" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_users_providers" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERone;" parent="1" source="users" target="providers" edge="1">
+        <mxCell id="e_users_providers" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToOne;" parent="1" source="users" target="providers" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_users_managers" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERone;" parent="1" source="users" target="managers" edge="1">
+        <mxCell id="e_users_managers" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToOne;" parent="1" source="users" target="managers" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_receivers_addresses" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERmany;" parent="1" source="receivers" target="addresses" edge="1">
+        <mxCell id="e_receivers_addresses" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToMany;" parent="1" source="receivers" target="addresses" edge="1">
           <mxGeometry x="0.0085" relative="1" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_receivers_appointments" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERmany;" parent="1" source="receivers" target="appointments" edge="1">
+        <mxCell id="e_receivers_appointments" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToMany;" parent="1" source="receivers" target="appointments" edge="1">
           <mxGeometry y="10" relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="760" y="560" />
+              <mxPoint x="850" y="560" />
             </Array>
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_addresses_appointments" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERmany;" parent="1" source="addresses" edge="1">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="e_addresses_appointments" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToMany;" parent="1" source="addresses" target="appointments" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="820" y="920" />
+            </Array>
+          </mxGeometry>
         </mxCell>
-        <mxCell id="e_providers_blocks" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERmany;" parent="1" source="providers" target="provider_blocks" edge="1">
+        <mxCell id="e_providers_blocks" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToMany;" parent="1" source="providers" target="provider_blocks" edge="1">
           <mxGeometry x="0.0085" relative="1" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_providers_provider_services" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERmany;" parent="1" source="providers" target="provider_services" edge="1">
+        <mxCell id="e_providers_provider_services" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToMany;" parent="1" source="providers" target="provider_services" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1610" y="600" />
@@ -1138,10 +1139,10 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_services_provider_services" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERmany;" parent="1" source="services" target="provider_services" edge="1">
+        <mxCell id="e_services_provider_services" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToMany;" parent="1" source="services" target="provider_services" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e_managers_provider_services" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERmany;" parent="1" source="managers" target="provider_services" edge="1">
+        <mxCell id="e_managers_provider_services" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERzeroToOne;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToMany;" parent="1" source="managers" target="provider_services" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1725" y="690" />
@@ -1149,7 +1150,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_provider_services_appointments" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERmany;" parent="1" source="provider_services" target="appointments" edge="1">
+        <mxCell id="e_provider_services_appointments" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToMany;" parent="1" source="provider_services" target="appointments" edge="1">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="1440" y="895" />
@@ -1159,12 +1160,12 @@
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_appointments_payments" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERone;" parent="1" source="appointments" target="payments" edge="1">
+        <mxCell id="e_appointments_payments" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToOne;" parent="1" source="appointments" target="payments" edge="1">
           <mxGeometry x="0.0133" relative="1" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_appointments_reviews" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERmany;" parent="1" source="appointments" target="reviews" edge="1">
+        <mxCell id="e_appointments_reviews" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;startArrow=ERone;startFill=0;endFill=0;strokeWidth=1;fontSize=14;fontFamily=Verdana;endArrow=ERzeroToMany;" parent="1" source="appointments" target="reviews" edge="1">
           <mxGeometry x="0.0175" relative="1" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>

@@ -14,7 +14,8 @@ export default function DataTable({
   toolbar,
   emptyTitle,
   emptyDescription,
-  compact = false
+  compact = false,
+  className = ''
 }) {
   const [query, setQuery] = React.useState('');
   const filtered = rows.filter((row) => {
@@ -28,7 +29,7 @@ export default function DataTable({
   });
 
   return (
-    <section className={`panel table-panel ${compact ? 'compact-panel' : ''}`}>
+    <section className={`panel table-panel ${compact ? 'compact-panel' : ''} ${className}`}>
       <div className="panel-heading table-heading">
         <div>
           <h2>{title}</h2>
