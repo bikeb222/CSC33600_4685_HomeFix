@@ -3,12 +3,12 @@ const { buildUpdateSet } = require('../utils/sql');
 
 const providerColumns = `
   p.provider_id,
-  p.user_id,
-  u.display_name AS username,
-  u.display_name,
-  u.email,
-  u.phone,
-  u.is_active,
+  CONCAT('provider:', p.provider_id) AS user_id,
+  p.display_name AS username,
+  p.display_name,
+  p.email,
+  p.phone,
+  p.is_active,
   p.provider_status,
   p.biography,
   p.created_at
@@ -20,7 +20,7 @@ async function list({ search = '', serviceId = null, activeOnly = false } = {}) 
 
   if (activeOnly) {
     where.push("p.provider_status = 'active'");
-    where.push('u.is_active = TRUE');
+    where.push('p.is_active = TRUE');
   }
 
   if (serviceId) {
@@ -30,7 +30,7 @@ async function list({ search = '', serviceId = null, activeOnly = false } = {}) 
   }
 
   if (search) {
-    where.push('CONCAT_WS(" ", u.display_name, u.email, u.phone, p.provider_status, p.biography, s.service_name) LIKE ?');
+    where.push('CONCAT_WS(" ", p.display_name, p.email, p.phone, p.provider_status, p.biography, s.service_name) LIKE ?');
     params.push(`%${search}%`);
   }
 
@@ -45,11 +45,10 @@ async function list({ search = '', serviceId = null, activeOnly = false } = {}) 
         ps.base_hourly_rate,
         ps.approval_status
       FROM Providers p
-      JOIN Users u ON p.user_id = u.user_id
       JOIN Provider_Services ps ON p.provider_id = ps.provider_id
       JOIN Services s ON ps.service_id = s.service_id
       ${whereClause}
-      ORDER BY u.display_name
+      ORDER BY p.display_name
     `, params);
   }
 
@@ -59,12 +58,11 @@ async function list({ search = '', serviceId = null, activeOnly = false } = {}) 
       COUNT(DISTINCT CASE WHEN ps.approval_status = 'approved' THEN ps.service_id END) AS service_count,
       COUNT(DISTINCT a.app_id) AS appointment_count
     FROM Providers p
-    JOIN Users u ON p.user_id = u.user_id
     LEFT JOIN Provider_Services ps ON p.provider_id = ps.provider_id
     LEFT JOIN Services s ON ps.service_id = s.service_id
     LEFT JOIN Appointments a ON p.provider_id = a.provider_id
     ${whereClause}
-    GROUP BY p.provider_id, p.user_id, u.display_name, u.email, u.phone, u.is_active, p.provider_status, p.biography, p.created_at
+    GROUP BY p.provider_id, p.display_name, p.email, p.phone, p.is_active, p.provider_status, p.biography, p.created_at
     ORDER BY p.provider_id DESC
   `, params);
 }
@@ -73,7 +71,6 @@ async function findById(id) {
   const rows = await query(`
     SELECT ${providerColumns}
     FROM Providers p
-    JOIN Users u ON p.user_id = u.user_id
     WHERE p.provider_id = ?
   `, [id]);
   return rows[0] || null;
@@ -81,10 +78,13 @@ async function findById(id) {
 
 async function create(provider) {
   const result = await query(`
-    INSERT INTO Providers (user_id, provider_status, biography)
-    VALUES (?, ?, ?)
+    INSERT INTO Providers (email, password_hash, display_name, phone, is_active, provider_status, biography)
+    VALUES (?, ?, ?, ?, TRUE, ?, ?)
   `, [
-    provider.user_id,
+    provider.email,
+    provider.password_hash,
+    provider.display_name,
+    provider.phone || null,
     provider.provider_status || 'active',
     provider.biography || null
   ]);
@@ -93,6 +93,9 @@ async function create(provider) {
 
 async function update(id, payload) {
   const { setClause, values } = buildUpdateSet(payload, [
+    'display_name',
+    'phone',
+    'is_active',
     'provider_status',
     'biography'
   ]);
@@ -146,20 +149,18 @@ async function listServiceApprovals(status = '') {
   return query(`
     SELECT
       ps.provider_id,
-      pu.display_name AS provider_name,
+      p.display_name AS provider_name,
       ps.service_id,
       s.service_name,
       ps.base_hourly_rate,
       ps.approval_status,
       ps.requested_at,
       ps.reviewed_at,
-      mu.display_name AS reviewed_by_name
+      m.display_name AS reviewed_by_name
     FROM Provider_Services ps
     JOIN Providers p ON ps.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
     JOIN Services s ON ps.service_id = s.service_id
     LEFT JOIN Managers m ON ps.reviewed_by = m.manager_id
-    LEFT JOIN Users mu ON m.user_id = mu.user_id
     ${whereClause}
     ORDER BY FIELD(ps.approval_status, 'pending', 'approved', 'rejected'), ps.requested_at DESC
   `, params);

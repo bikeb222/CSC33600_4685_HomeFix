@@ -1,110 +1,159 @@
 const { query } = require('../config/db');
 const { buildUpdateSet } = require('../utils/sql');
 
-const publicUserSelect = `
-  u.user_id,
-  u.role,
-  u.email,
-  u.display_name,
-  u.phone,
-  u.is_active,
-  u.created_at,
-  r.receiver_id,
-  r.wallet_balance,
-  p.provider_id,
-  m.manager_id
-`;
+const roleTables = {
+  receiver: {
+    table: 'Receivers',
+    idColumn: 'receiver_id',
+    extraColumns: 'language, wallet_balance'
+  },
+  provider: {
+    table: 'Providers',
+    idColumn: 'provider_id',
+    extraColumns: 'provider_status, biography'
+  },
+  manager: {
+    table: 'Managers',
+    idColumn: 'manager_id',
+    extraColumns: 'department'
+  }
+};
+
+function userId(role, id) {
+  return `${role}:${id}`;
+}
+
+function parseUserId(id) {
+  const [role, rawId] = String(id || '').split(':');
+  const config = roleTables[role];
+  const roleId = Number(rawId);
+  if (!config || !Number.isInteger(roleId) || roleId <= 0) {
+    return null;
+  }
+  return { role, roleId, ...config };
+}
+
+function commonSelect(role, includePassword = false) {
+  const config = roleTables[role];
+  return `
+    SELECT
+      CONCAT('${role}:', ${config.idColumn}) AS user_id,
+      '${role}' AS role,
+      email,
+      display_name,
+      display_name AS username,
+      phone,
+      is_active,
+      created_at,
+      ${role === 'receiver' ? 'receiver_id' : 'NULL'} AS receiver_id,
+      ${role === 'receiver' ? 'wallet_balance' : 'NULL'} AS wallet_balance,
+      ${role === 'provider' ? 'provider_id' : 'NULL'} AS provider_id,
+      ${role === 'manager' ? 'manager_id' : 'NULL'} AS manager_id
+      ${includePassword ? ', password_hash' : ''}
+    FROM ${config.table}
+  `;
+}
 
 async function findByEmail(email) {
   const rows = await query(`
-    SELECT
-      ${publicUserSelect},
-      u.password_hash
-    FROM Users u
-    LEFT JOIN Receivers r ON u.user_id = r.user_id
-    LEFT JOIN Providers p ON u.user_id = p.user_id
-    LEFT JOIN Managers m ON u.user_id = m.user_id
-    WHERE u.email = ?
-  `, [email]);
+    ${commonSelect('receiver', true)}
+    WHERE email = ?
+    UNION ALL
+    ${commonSelect('provider', true)}
+    WHERE email = ?
+    UNION ALL
+    ${commonSelect('manager', true)}
+    WHERE email = ?
+    LIMIT 1
+  `, [email, email, email]);
   return rows[0] || null;
 }
 
 async function findById(id) {
+  const parsed = parseUserId(id);
+  if (!parsed) {
+    return null;
+  }
   const rows = await query(`
-    SELECT ${publicUserSelect}
-    FROM Users u
-    LEFT JOIN Receivers r ON u.user_id = r.user_id
-    LEFT JOIN Providers p ON u.user_id = p.user_id
-    LEFT JOIN Managers m ON u.user_id = m.user_id
-    WHERE u.user_id = ?
-  `, [id]);
+    ${commonSelect(parsed.role)}
+    WHERE ${parsed.idColumn} = ?
+  `, [parsed.roleId]);
   return rows[0] || null;
 }
 
 async function list({ role = '', search = '' } = {}) {
-  const where = [];
+  const roles = role ? [role] : Object.keys(roleTables);
+  const queries = [];
   const params = [];
-  if (role) {
-    where.push('u.role = ?');
-    params.push(role);
+
+  roles.forEach((currentRole) => {
+    const config = roleTables[currentRole];
+    if (!config) {
+      return;
+    }
+    let sql = commonSelect(currentRole);
+    const where = [];
+    if (search) {
+      where.push(`CONCAT_WS(" ", email, display_name, phone, '${currentRole}') LIKE ?`);
+      params.push(`%${search}%`);
+    }
+    if (where.length) {
+      sql += ` WHERE ${where.join(' AND ')}`;
+    }
+    queries.push(sql);
+  });
+
+  if (!queries.length) {
+    return [];
   }
-  if (search) {
-    where.push('CONCAT_WS(" ", u.email, u.display_name, u.phone, u.role) LIKE ?');
-    params.push(`%${search}%`);
-  }
-  const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
   return query(`
-    SELECT ${publicUserSelect}
-    FROM Users u
-    LEFT JOIN Receivers r ON u.user_id = r.user_id
-    LEFT JOIN Providers p ON u.user_id = p.user_id
-    LEFT JOIN Managers m ON u.user_id = m.user_id
-    ${whereClause}
-    ORDER BY u.user_id DESC
+    SELECT *
+    FROM (
+      ${queries.join('\nUNION ALL\n')}
+    ) role_users
+    ORDER BY role, user_id
   `, params);
 }
 
-async function createUser(user, executor) {
+async function createReceiver(user, payload, executor) {
   const [result] = await executor.execute(`
-    INSERT INTO Users (role, email, password_hash, display_name, phone, is_active)
-    VALUES (?, ?, ?, ?, ?, TRUE)
+    INSERT INTO Receivers (email, password_hash, display_name, phone, is_active, language)
+    VALUES (?, ?, ?, ?, TRUE, ?)
+  `, [user.email, user.password_hash, user.display_name, user.phone || null, payload.language || null]);
+  return result.insertId;
+}
+
+async function createProvider(user, payload, executor) {
+  const [result] = await executor.execute(`
+    INSERT INTO Providers (email, password_hash, display_name, phone, is_active, provider_status, biography)
+    VALUES (?, ?, ?, ?, TRUE, ?, ?)
   `, [
-    user.role,
     user.email,
     user.password_hash,
     user.display_name,
-    user.phone || null
+    user.phone || null,
+    payload.provider_status || 'active',
+    payload.biography || null
   ]);
   return result.insertId;
 }
 
-async function createReceiver(userId, payload, executor) {
+async function createManager(user, payload, executor) {
   const [result] = await executor.execute(`
-    INSERT INTO Receivers (user_id, language)
-    VALUES (?, ?)
-  `, [userId, payload.language || null]);
-  return result.insertId;
-}
-
-async function createProvider(userId, payload, executor) {
-  const [result] = await executor.execute(`
-    INSERT INTO Providers (user_id, provider_status, biography)
-    VALUES (?, ?, ?)
-  `, [userId, payload.provider_status || 'active', payload.biography || null]);
-  return result.insertId;
-}
-
-async function createManager(userId, payload, executor) {
-  const [result] = await executor.execute(`
-    INSERT INTO Managers (user_id, department)
-    VALUES (?, ?)
-  `, [userId, payload.department || null]);
+    INSERT INTO Managers (email, password_hash, display_name, phone, is_active, department)
+    VALUES (?, ?, ?, ?, TRUE, ?)
+  `, [user.email, user.password_hash, user.display_name, user.phone || null, payload.department || null]);
   return result.insertId;
 }
 
 async function update(id, payload) {
+  const parsed = parseUserId(id);
+  if (!parsed) {
+    return 0;
+  }
   const { setClause, values } = buildUpdateSet(payload, ['display_name', 'phone', 'is_active']);
-  const result = await query(`UPDATE Users SET ${setClause} WHERE user_id = ?`, [...values, id]);
+  const result = await query(`UPDATE ${parsed.table} SET ${setClause} WHERE ${parsed.idColumn} = ?`, [...values, parsed.roleId]);
   return result.affectedRows;
 }
 
@@ -112,9 +161,9 @@ module.exports = {
   findByEmail,
   findById,
   list,
-  createUser,
   createReceiver,
   createProvider,
   createManager,
-  update
+  update,
+  userId
 };

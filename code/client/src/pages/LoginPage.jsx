@@ -3,9 +3,10 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import ErrorAlert from '../components/common/ErrorAlert';
 import { useAuth } from '../auth/useAuth';
+import { defaultPathForRole, isPathAllowedForRole } from '../utils/roleAccess';
 
 export default function LoginPage() {
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = React.useState({ email: 'manager@homefix.com', password: 'Password123!' });
@@ -13,7 +14,7 @@ export default function LoginPage() {
   const [loading, setLoading] = React.useState(false);
 
   if (isAuthenticated) {
-    return <Navigate to={location.state?.from?.pathname || '/'} replace />;
+    return <Navigate to={defaultPathForRole(user?.role)} replace />;
   }
 
   async function handleSubmit(event) {
@@ -21,8 +22,12 @@ export default function LoginPage() {
     try {
       setLoading(true);
       setError('');
-      await login(form);
-      navigate(location.state?.from?.pathname || '/', { replace: true });
+      const nextUser = await login(form);
+      const requestedPath = location.state?.from?.pathname || '/';
+      const nextPath = isPathAllowedForRole(nextUser.role, requestedPath)
+        ? requestedPath
+        : defaultPathForRole(nextUser.role);
+      navigate(nextPath, { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

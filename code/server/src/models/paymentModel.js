@@ -16,16 +16,14 @@ const paymentSelect = `
     a.estimated_hours,
     a.actual_hours,
     a.actual_total,
-    ru.display_name AS receiver_name,
-    pu.display_name AS provider_name,
+    r.display_name AS receiver_name,
+    p.display_name AS provider_name,
     s.service_name,
     a.scheduled_time
   FROM Payments pay
   JOIN Appointments a ON pay.app_id = a.app_id
   JOIN Receivers r ON a.receiver_id = r.receiver_id
-  JOIN Users ru ON r.user_id = ru.user_id
   JOIN Providers p ON a.provider_id = p.provider_id
-  JOIN Users pu ON p.user_id = pu.user_id
   JOIN Services s ON a.service_id = s.service_id
 `;
 

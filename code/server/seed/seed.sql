@@ -11,7 +11,6 @@ DELETE FROM Services;
 DELETE FROM Managers;
 DELETE FROM Providers;
 DELETE FROM Receivers;
-DELETE FROM Users;
 ALTER TABLE Reviews AUTO_INCREMENT = 1;
 ALTER TABLE Payments AUTO_INCREMENT = 1;
 ALTER TABLE Appointments AUTO_INCREMENT = 1;
@@ -21,38 +20,24 @@ ALTER TABLE Services AUTO_INCREMENT = 1;
 ALTER TABLE Managers AUTO_INCREMENT = 1;
 ALTER TABLE Providers AUTO_INCREMENT = 1;
 ALTER TABLE Receivers AUTO_INCREMENT = 1;
-ALTER TABLE Users AUTO_INCREMENT = 1;
 SET FOREIGN_KEY_CHECKS = 1;
 
-INSERT INTO Users (role, email, password_hash, display_name, phone, is_active) VALUES
-('manager', 'manager@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'Maya Manager', '212-555-0001', TRUE),
-('receiver', 'receiver1@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'alice_home', '212-555-0101', TRUE),
-('receiver', 'receiver2@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'ben_chen', '212-555-0102', TRUE),
-('receiver', 'receiver3@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'carla_r', '718-555-0103', TRUE),
-('receiver', 'receiver4@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'david_k', '646-555-0104', TRUE),
-('receiver', 'receiver5@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'emma_w', '917-555-0105', TRUE),
-('provider', 'provider1@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'fixit_mario', '212-555-0201', TRUE),
-('provider', 'provider2@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'spark_sara', '212-555-0202', TRUE),
-('provider', 'provider3@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'clean_nina', '718-555-0203', TRUE),
-('provider', 'provider4@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'paint_omar', '646-555-0204', TRUE),
-('provider', 'provider5@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'garden_li', '917-555-0205', TRUE);
+INSERT INTO Managers (email, password_hash, display_name, phone, is_active, department) VALUES
+('manager@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'Maya Manager', '212-555-0001', TRUE, 'Operations');
 
-INSERT INTO Managers (user_id, department) VALUES
-(1, 'Operations');
+INSERT INTO Receivers (email, password_hash, display_name, phone, is_active, language, wallet_balance) VALUES
+('receiver1@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'alice_home', '212-555-0101', TRUE, 'English', 500.00),
+('receiver2@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'ben_chen', '212-555-0102', TRUE, 'Mandarin', 320.00),
+('receiver3@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'carla_r', '718-555-0103', TRUE, 'Spanish', 250.00),
+('receiver4@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'david_k', '646-555-0104', TRUE, 'English', 200.00),
+('receiver5@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'emma_w', '917-555-0105', TRUE, 'English', 180.00);
 
-INSERT INTO Receivers (user_id, language, wallet_balance) VALUES
-(2, 'English', 500.00),
-(3, 'Mandarin', 320.00),
-(4, 'Spanish', 250.00),
-(5, 'English', 200.00),
-(6, 'English', 180.00);
-
-INSERT INTO Providers (user_id, provider_status, biography) VALUES
-(7, 'active', 'Licensed handyman focused on plumbing and small repairs.'),
-(8, 'active', 'Electrician with ten years of apartment maintenance experience.'),
-(9, 'resting', 'Deep cleaning specialist for move-in and move-out jobs.'),
-(10, 'active', 'Interior painting and drywall touch-up provider.'),
-(11, 'active', 'Outdoor maintenance, small landscaping, and seasonal cleanup.');
+INSERT INTO Providers (email, password_hash, display_name, phone, is_active, provider_status, biography) VALUES
+('provider1@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'fixit_mario', '212-555-0201', TRUE, 'active', 'Licensed handyman focused on plumbing and small repairs.'),
+('provider2@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'spark_sara', '212-555-0202', TRUE, 'active', 'Electrician with ten years of apartment maintenance experience.'),
+('provider3@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'clean_nina', '718-555-0203', TRUE, 'resting', 'Deep cleaning specialist for move-in and move-out jobs.'),
+('provider4@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'paint_omar', '646-555-0204', TRUE, 'active', 'Interior painting and drywall touch-up provider.'),
+('provider5@homefix.com', '$2a$10$vA5FAsnOaIlnsOFs3Iz5YOMKa7sVR9W8sA1WRDPeTJPR2p/7U00Ei', 'garden_li', '917-555-0205', TRUE, 'active', 'Outdoor maintenance, small landscaping, and seasonal cleanup.');
 
 INSERT INTO Services (service_name, description) VALUES
 ('Plumbing', 'Leaks, faucets, drains, and small bathroom repairs.'),

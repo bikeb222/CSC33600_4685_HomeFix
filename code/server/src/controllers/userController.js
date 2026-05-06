@@ -24,7 +24,7 @@ exports.create = asyncHandler(async (req, res) => {
 });
 
 exports.update = asyncHandler(async (req, res) => {
-  if (req.user.role !== 'manager' && Number(req.user.user_id) !== Number(req.params.id)) {
+  if (req.user.role !== 'manager' && String(req.user.user_id) !== String(req.params.id)) {
     throw new AppError('You can only update your own profile', 403);
   }
   const user = await authService.updateUser(req.params.id, req.body);

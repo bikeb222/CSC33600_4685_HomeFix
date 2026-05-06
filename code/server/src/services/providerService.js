@@ -2,7 +2,6 @@ const providerModel = require('../models/providerModel');
 const appointmentModel = require('../models/appointmentModel');
 const authService = require('./authService');
 const AppError = require('../utils/AppError');
-const userModel = require('../models/userModel');
 const {
   requireFields,
   normalizeId,
@@ -60,30 +59,20 @@ async function update(id, payload) {
 
   delete updatePayload.username;
   delete updatePayload.email;
-  delete updatePayload.phone;
   if (updatePayload.provider_status) {
     assertStatus(updatePayload.provider_status, providerStatuses, 'provider_status');
   }
 
-  const existing = await getById(providerId);
-  const userPayload = {};
+  await getById(providerId);
   if (payload.display_name !== undefined || payload.username !== undefined) {
-    userPayload.display_name = payload.display_name || payload.username;
-  }
-  if (payload.phone !== undefined) {
-    userPayload.phone = payload.phone || null;
+    updatePayload.display_name = payload.display_name || payload.username;
   }
 
-  if (Object.keys(updatePayload).length === 0 && Object.keys(userPayload).length === 0) {
+  if (Object.keys(updatePayload).length === 0) {
     throw new AppError('No provider fields were provided for update', 400);
   }
 
-  if (Object.keys(updatePayload).length > 0) {
-    await providerModel.update(providerId, updatePayload);
-  }
-  if (Object.keys(userPayload).length > 0) {
-    await userModel.update(existing.user_id, userPayload);
-  }
+  await providerModel.update(providerId, updatePayload);
   return providerModel.findById(providerId);
 }
 

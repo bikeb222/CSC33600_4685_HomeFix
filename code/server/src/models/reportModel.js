@@ -4,17 +4,15 @@ async function appointmentsReport() {
   return query(`
     SELECT
       a.app_id,
-      ru.display_name AS receiver,
-      pu.display_name AS provider,
+      r.display_name AS receiver,
+      p.display_name AS provider,
       s.service_name AS service,
       a.scheduled_time,
       a.appointment_status AS status,
       a.estimated_total
     FROM Appointments a
     JOIN Receivers r ON a.receiver_id = r.receiver_id
-    JOIN Users ru ON r.user_id = ru.user_id
     JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
     JOIN Services s ON a.service_id = s.service_id
     ORDER BY a.scheduled_time DESC
   `);
@@ -45,12 +43,11 @@ async function providerPerformanceReport(filters = {}) {
   return query(`
     SELECT
       p.provider_id,
-      u.display_name AS provider_name,
+      p.display_name AS provider_name,
       COALESCE(completed.completed_appointments_count, 0) AS completed_appointments_count,
       COALESCE(ratings.average_rating, 0) AS average_rating,
       COALESCE(payouts.total_payout, 0) AS total_payout
     FROM Providers p
-    JOIN Users u ON p.user_id = u.user_id
     LEFT JOIN (
       SELECT provider_id, COUNT(*) AS completed_appointments_count
       FROM Appointments
@@ -72,7 +69,7 @@ async function providerPerformanceReport(filters = {}) {
       GROUP BY a.provider_id
     ) payouts ON p.provider_id = payouts.provider_id
     ${providerFilter}
-    ORDER BY u.display_name
+    ORDER BY p.display_name
   `, params);
 }
 

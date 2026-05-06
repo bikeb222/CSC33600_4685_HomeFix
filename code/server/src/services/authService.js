@@ -51,24 +51,24 @@ async function register(payload, actor = null) {
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
-    const userId = await userModel.createUser({
-      role: payload.role,
+    const userPayload = {
       email: payload.email,
       password_hash,
       display_name: payload.display_name,
       phone: payload.phone
-    }, connection);
+    };
 
+    let roleId;
     if (payload.role === 'receiver') {
-      await userModel.createReceiver(userId, payload, connection);
+      roleId = await userModel.createReceiver(userPayload, payload, connection);
     } else if (payload.role === 'provider') {
-      await userModel.createProvider(userId, payload, connection);
+      roleId = await userModel.createProvider(userPayload, payload, connection);
     } else {
-      await userModel.createManager(userId, payload, connection);
+      roleId = await userModel.createManager(userPayload, payload, connection);
     }
 
     await connection.commit();
-    return sanitizeUser(await userModel.findById(userId));
+    return sanitizeUser(await userModel.findById(userModel.userId(payload.role, roleId)));
   } catch (error) {
     await connection.rollback();
     throw error;

@@ -1,13 +1,19 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { CalendarPlus, LogOut, Search } from 'lucide-react';
 import { roleNavItems } from '../../utils/constants';
 import { useAuth } from '../../auth/useAuth';
 
 export default function Topbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const items = roleNavItems[user?.role] || roleNavItems.manager;
   const current = items.find((item) => item.path === location.pathname) || items[0];
+
+  async function handleLogout() {
+    await logout();
+    navigate('/login', { replace: true });
+  }
 
   return (
     <header className="topbar">
@@ -32,7 +38,7 @@ export default function Topbar() {
           <span>{user?.role}</span>
           <strong>{user?.display_name}</strong>
         </div>
-        <button className="icon-button" type="button" onClick={logout} title="Log out">
+        <button className="icon-button" type="button" onClick={handleLogout} title="Log out">
           <LogOut size={17} />
         </button>
       </div>

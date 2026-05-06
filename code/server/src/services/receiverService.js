@@ -1,7 +1,6 @@
 const receiverModel = require('../models/receiverModel');
 const authService = require('./authService');
 const AppError = require('../utils/AppError');
-const userModel = require('../models/userModel');
 const { normalizeId } = require('../utils/validators');
 
 async function register(payload, actor) {
@@ -35,25 +34,19 @@ async function update(id, payload) {
     }
   });
 
-  const existing = await getById(receiverId);
-  const userPayload = {};
+  await getById(receiverId);
   if (payload.display_name !== undefined || payload.username !== undefined) {
-    userPayload.display_name = payload.display_name || payload.username;
+    updatePayload.display_name = payload.display_name || payload.username;
   }
   if (payload.phone !== undefined) {
-    userPayload.phone = payload.phone || null;
+    updatePayload.phone = payload.phone || null;
   }
 
-  if (Object.keys(updatePayload).length === 0 && Object.keys(userPayload).length === 0) {
+  if (Object.keys(updatePayload).length === 0) {
     throw new AppError('No receiver fields were provided for update', 400);
   }
 
-  if (Object.keys(updatePayload).length > 0) {
-    await receiverModel.update(receiverId, updatePayload);
-  }
-  if (Object.keys(userPayload).length > 0) {
-    await userModel.update(existing.user_id, userPayload);
-  }
+  await receiverModel.update(receiverId, updatePayload);
   return receiverModel.findById(receiverId);
 }
 

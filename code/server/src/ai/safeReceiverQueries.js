@@ -12,13 +12,12 @@ async function getReceiverNextAppointment(receiverId) {
       a.estimated_total,
       a.actual_total,
       s.service_name,
-      pu.display_name AS provider_name,
+      p.display_name AS provider_name,
       CONCAT(ad.street, ', ', ad.city, ', ', COALESCE(ad.state, ''), ' ', COALESCE(ad.zip_code, '')) AS address_label
     FROM Appointments a
     JOIN Services s ON a.service_id = s.service_id
     JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
-    JOIN Addresses ad ON a.address_id = ad.address_id
+        JOIN Addresses ad ON a.address_id = ad.address_id
     WHERE a.receiver_id = ?
       AND a.appointment_status IN ('pending', 'accepted', 'in_progress')
       AND a.scheduled_time >= CURRENT_TIMESTAMP
@@ -45,12 +44,11 @@ async function getReceiverAppointments(receiverId, status = null) {
       a.estimated_total,
       a.actual_total,
       s.service_name,
-      pu.display_name AS provider_name
+      p.display_name AS provider_name
     FROM Appointments a
     JOIN Services s ON a.service_id = s.service_id
     JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
-    WHERE a.receiver_id = ?
+        WHERE a.receiver_id = ?
       ${statusClause}
     ORDER BY a.scheduled_time DESC
     LIMIT 10
@@ -76,13 +74,12 @@ async function getReceiverPayments(receiverId) {
       pay.payment_status,
       pay.payment_date,
       s.service_name,
-      pu.display_name AS provider_name
+      p.display_name AS provider_name
     FROM Payments pay
     JOIN Appointments a ON pay.app_id = a.app_id
     JOIN Services s ON a.service_id = s.service_id
     JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
-    WHERE a.receiver_id = ?
+        WHERE a.receiver_id = ?
     ORDER BY pay.payment_id DESC
     LIMIT 10
   `, [receiverId]);
@@ -109,13 +106,12 @@ async function getReceiverSpendingSummary(receiverId) {
       pay.payment_status,
       pay.payment_date,
       s.service_name,
-      pu.display_name AS provider_name
+      p.display_name AS provider_name
     FROM Payments pay
     JOIN Appointments a ON pay.app_id = a.app_id
     JOIN Services s ON a.service_id = s.service_id
     JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
-    WHERE a.receiver_id = ?
+        WHERE a.receiver_id = ?
     ORDER BY pay.payment_date DESC, pay.payment_id DESC
     LIMIT 5
   `, [receiverId]);
@@ -134,13 +130,12 @@ async function getReceiverUnpaidPayments(receiverId) {
       pay.total_amount,
       pay.payment_status,
       s.service_name,
-      pu.display_name AS provider_name
+      p.display_name AS provider_name
     FROM Payments pay
     JOIN Appointments a ON pay.app_id = a.app_id
     JOIN Services s ON a.service_id = s.service_id
     JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
-    WHERE a.receiver_id = ? AND pay.payment_status = 'unpaid'
+        WHERE a.receiver_id = ? AND pay.payment_status = 'unpaid'
     ORDER BY pay.payment_id DESC
     LIMIT 10
   `, [receiverId]);
@@ -234,22 +229,21 @@ async function getProvidersForService(messageOrName) {
   return query(`
     SELECT
       p.provider_id,
-      u.display_name AS provider_name,
+      p.display_name AS provider_name,
       p.provider_status,
       s.service_name,
       ps.base_hourly_rate,
       COALESCE(ROUND(AVG(CASE WHEN rev.review_direction = 'receiver_to_provider' THEN rev.rating END), 2), 0) AS average_rating
     FROM Provider_Services ps
     JOIN Providers p ON ps.provider_id = p.provider_id
-    JOIN Users u ON p.user_id = u.user_id
-    JOIN Services s ON ps.service_id = s.service_id
+        JOIN Services s ON ps.service_id = s.service_id
     LEFT JOIN Appointments a ON p.provider_id = a.provider_id
     LEFT JOIN Reviews rev ON a.app_id = rev.app_id
     WHERE ps.approval_status = 'approved'
       AND p.provider_status = 'active'
       AND LOWER(s.service_name) LIKE ?
-    GROUP BY p.provider_id, u.display_name, p.provider_status, s.service_name, ps.base_hourly_rate
-    ORDER BY average_rating DESC, u.display_name
+    GROUP BY p.provider_id, p.display_name, p.provider_status, s.service_name, ps.base_hourly_rate
+    ORDER BY average_rating DESC, p.display_name
     LIMIT 10
   `, [`%${serviceName}%`]);
 }
@@ -258,7 +252,7 @@ async function getTopProvidersByAverageRating(limit = 5) {
   return query(`
     SELECT
       p.provider_id,
-      u.display_name AS provider_name,
+      p.display_name AS provider_name,
       p.provider_status,
       COALESCE(ROUND(AVG(CASE WHEN rev.review_direction = 'receiver_to_provider' THEN rev.rating END), 2), 0) AS average_rating,
       COUNT(CASE WHEN rev.review_direction = 'receiver_to_provider' THEN rev.review_id END) AS review_count,
@@ -270,8 +264,7 @@ async function getTopProvidersByAverageRating(limit = 5) {
           AND ps.approval_status = 'approved'
       ) AS services
     FROM Providers p
-    JOIN Users u ON p.user_id = u.user_id
-    LEFT JOIN Appointments a ON p.provider_id = a.provider_id
+        LEFT JOIN Appointments a ON p.provider_id = a.provider_id
     LEFT JOIN Reviews rev ON a.app_id = rev.app_id
     WHERE p.provider_status = 'active'
       AND EXISTS (
@@ -280,7 +273,7 @@ async function getTopProvidersByAverageRating(limit = 5) {
         WHERE ps.provider_id = p.provider_id
           AND ps.approval_status = 'approved'
       )
-    GROUP BY p.provider_id, u.display_name, p.provider_status
+    GROUP BY p.provider_id, p.display_name, p.provider_status
     HAVING review_count > 0
     ORDER BY average_rating DESC, review_count DESC, provider_name
     LIMIT ${Math.min(Number.parseInt(limit, 10) || 5, 10)}
@@ -291,14 +284,13 @@ async function getProviderWorkingHoursSummary() {
   const unavailableBlocks = await query(`
     SELECT
       b.provider_id,
-      u.display_name AS provider_name,
+      p.display_name AS provider_name,
       b.start_time,
       b.end_time,
       b.reason
     FROM Provider_Unavailable_Blocks b
     JOIN Providers p ON b.provider_id = p.provider_id
-    JOIN Users u ON p.user_id = u.user_id
-    WHERE b.end_time >= CURRENT_TIMESTAMP
+        WHERE b.end_time >= CURRENT_TIMESTAMP
     ORDER BY b.start_time ASC
     LIMIT 10
   `);
@@ -323,16 +315,15 @@ async function getProviderPublicDetails(providerId) {
   const rows = await query(`
     SELECT
       p.provider_id,
-      u.display_name AS provider_name,
+      p.display_name AS provider_name,
       p.provider_status,
       p.biography,
       COALESCE(ROUND(AVG(CASE WHEN rev.review_direction = 'receiver_to_provider' THEN rev.rating END), 2), 0) AS average_rating
     FROM Providers p
-    JOIN Users u ON p.user_id = u.user_id
-    LEFT JOIN Appointments a ON p.provider_id = a.provider_id
+        LEFT JOIN Appointments a ON p.provider_id = a.provider_id
     LEFT JOIN Reviews rev ON a.app_id = rev.app_id
     WHERE p.provider_id = ?
-    GROUP BY p.provider_id, u.display_name, p.provider_status, p.biography
+    GROUP BY p.provider_id, p.display_name, p.provider_status, p.biography
   `, [providerId]);
   return rows[0] || null;
 }
@@ -369,17 +360,16 @@ async function getReceiverReviewStatus(receiverId, appId = null) {
       a.app_id,
       a.appointment_status,
       s.service_name,
-      pu.display_name AS provider_name,
+      p.display_name AS provider_name,
       MAX(CASE WHEN rev.review_direction = 'receiver_to_provider' THEN 1 ELSE 0 END) AS receiver_reviewed,
       MAX(CASE WHEN rev.review_direction = 'provider_to_receiver' THEN 1 ELSE 0 END) AS provider_reviewed
     FROM Appointments a
     JOIN Services s ON a.service_id = s.service_id
     JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
-    LEFT JOIN Reviews rev ON a.app_id = rev.app_id
+        LEFT JOIN Reviews rev ON a.app_id = rev.app_id
     WHERE a.receiver_id = ? AND a.appointment_status = 'completed'
       ${appClause}
-    GROUP BY a.app_id, a.appointment_status, s.service_name, pu.display_name
+    GROUP BY a.app_id, a.appointment_status, s.service_name, p.display_name
     ORDER BY a.scheduled_time DESC
     LIMIT 10
   `, params);

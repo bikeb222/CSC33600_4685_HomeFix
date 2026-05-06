@@ -3,12 +3,12 @@ const { buildUpdateSet } = require('../utils/sql');
 
 const receiverColumns = `
   r.receiver_id,
-  r.user_id,
-  u.display_name AS username,
-  u.display_name,
-  u.email,
-  u.phone,
-  u.is_active,
+  CONCAT('receiver:', r.receiver_id) AS user_id,
+  r.display_name AS username,
+  r.display_name,
+  r.email,
+  r.phone,
+  r.is_active,
   r.language,
   r.wallet_balance,
   r.created_at
@@ -20,7 +20,7 @@ async function list(search = '') {
 
   if (search) {
     whereClause = `
-      WHERE CONCAT_WS(' ', u.display_name, u.email, u.phone, r.language) LIKE ?
+      WHERE CONCAT_WS(' ', r.display_name, r.email, r.phone, r.language) LIKE ?
     `;
     params.push(`%${search}%`);
   }
@@ -31,11 +31,10 @@ async function list(search = '') {
       COUNT(DISTINCT ad.address_id) AS address_count,
       COUNT(DISTINCT ap.app_id) AS appointment_count
     FROM Receivers r
-    JOIN Users u ON r.user_id = u.user_id
     LEFT JOIN Addresses ad ON r.receiver_id = ad.receiver_id
     LEFT JOIN Appointments ap ON r.receiver_id = ap.receiver_id
     ${whereClause}
-    GROUP BY r.receiver_id, r.user_id, u.display_name, u.email, u.phone, u.is_active, r.language, r.wallet_balance, r.created_at
+    GROUP BY r.receiver_id, r.display_name, r.email, r.phone, r.is_active, r.language, r.wallet_balance, r.created_at
     ORDER BY r.receiver_id DESC
   `, params);
 }
@@ -44,7 +43,6 @@ async function findById(id) {
   const rows = await query(`
     SELECT ${receiverColumns}
     FROM Receivers r
-    JOIN Users u ON r.user_id = u.user_id
     WHERE r.receiver_id = ?
   `, [id]);
   return rows[0] || null;
@@ -52,17 +50,20 @@ async function findById(id) {
 
 async function create(receiver) {
   const result = await query(`
-    INSERT INTO Receivers (user_id, language)
-    VALUES (?, ?)
+    INSERT INTO Receivers (email, password_hash, display_name, phone, is_active, language)
+    VALUES (?, ?, ?, ?, TRUE, ?)
   `, [
-    receiver.user_id,
+    receiver.email,
+    receiver.password_hash,
+    receiver.display_name,
+    receiver.phone || null,
     receiver.language || null
   ]);
   return result.insertId;
 }
 
 async function update(id, payload) {
-  const { setClause, values } = buildUpdateSet(payload, ['language', 'wallet_balance']);
+  const { setClause, values } = buildUpdateSet(payload, ['display_name', 'phone', 'is_active', 'language', 'wallet_balance']);
   const result = await query(`UPDATE Receivers SET ${setClause} WHERE receiver_id = ?`, [...values, id]);
   return result.affectedRows;
 }

@@ -4,9 +4,9 @@ const appointmentSelect = `
   SELECT
     a.app_id,
     a.receiver_id,
-    ru.display_name AS receiver_name,
+    r.display_name AS receiver_name,
     a.provider_id,
-    pu.display_name AS provider_name,
+    p.display_name AS provider_name,
     a.service_id,
     s.service_name,
     a.address_id,
@@ -23,9 +23,7 @@ const appointmentSelect = `
     a.created_at
   FROM Appointments a
   JOIN Receivers r ON a.receiver_id = r.receiver_id
-  JOIN Users ru ON r.user_id = ru.user_id
   JOIN Providers p ON a.provider_id = p.provider_id
-  JOIN Users pu ON p.user_id = pu.user_id
   JOIN Services s ON a.service_id = s.service_id
   JOIN Addresses ad ON a.address_id = ad.address_id
 `;

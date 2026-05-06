@@ -9,17 +9,15 @@ const reviewSelect = `
     rev.comment,
     rev.created_at,
     a.provider_id,
-    pu.display_name AS provider_name,
+    p.display_name AS provider_name,
     a.receiver_id,
-    ru.display_name AS receiver_name,
+    r.display_name AS receiver_name,
     s.service_name,
     a.appointment_status
   FROM Reviews rev
   JOIN Appointments a ON rev.app_id = a.app_id
   JOIN Providers p ON a.provider_id = p.provider_id
-  JOIN Users pu ON p.user_id = pu.user_id
   JOIN Receivers r ON a.receiver_id = r.receiver_id
-  JOIN Users ru ON r.user_id = ru.user_id
   JOIN Services s ON a.service_id = s.service_id
 `;
 

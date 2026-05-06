@@ -110,14 +110,13 @@ async function getProviderWorkingHoursSummary() {
     SELECT
       b.block_id,
       b.provider_id,
-      u.display_name AS provider_name,
+      p.display_name AS provider_name,
       b.start_time,
       b.end_time,
       b.reason
     FROM Provider_Unavailable_Blocks b
     JOIN Providers p ON b.provider_id = p.provider_id
-    JOIN Users u ON p.user_id = u.user_id
-    WHERE b.end_time >= CURRENT_TIMESTAMP
+        WHERE b.end_time >= CURRENT_TIMESTAMP
     ORDER BY b.start_time ASC
     LIMIT 10
   `);
@@ -125,15 +124,14 @@ async function getProviderWorkingHoursSummary() {
     SELECT
       a.app_id,
       a.provider_id,
-      u.display_name AS provider_name,
+      p.display_name AS provider_name,
       s.service_name,
       a.appointment_status,
       a.scheduled_time,
       COALESCE(a.actual_hours, a.estimated_hours) AS booked_hours
     FROM Appointments a
     JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users u ON p.user_id = u.user_id
-    JOIN Services s ON a.service_id = s.service_id
+        JOIN Services s ON a.service_id = s.service_id
     WHERE a.appointment_status IN ('accepted', 'in_progress')
       AND a.scheduled_time >= CURRENT_TIMESTAMP
     ORDER BY a.scheduled_time ASC
@@ -161,12 +159,11 @@ async function getProviderWorkingHoursSummary() {
 async function getTopProvidersByCompletedAppointments(limit = 5) {
   const rowLimit = safeLimit(limit, 5);
   return query(`
-    SELECT p.provider_id, u.display_name AS provider_name, COUNT(*) AS completed_count
+    SELECT p.provider_id, p.display_name AS provider_name, COUNT(*) AS completed_count
     FROM Appointments a
     JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users u ON p.user_id = u.user_id
-    WHERE a.appointment_status = 'completed'
-    GROUP BY p.provider_id, u.display_name
+        WHERE a.appointment_status = 'completed'
+    GROUP BY p.provider_id, p.display_name
     ORDER BY completed_count DESC, provider_name
     LIMIT ${rowLimit}
   `);
@@ -177,13 +174,12 @@ async function getTopProvidersByAverageRating(limit = 5) {
   return query(`
     SELECT
       p.provider_id,
-      u.display_name AS provider_name,
+      p.display_name AS provider_name,
       p.provider_status,
       ROUND(AVG(rev.rating), 2) AS average_rating,
       COUNT(rev.review_id) AS review_count
     FROM Providers p
-    JOIN Users u ON p.user_id = u.user_id
-    JOIN Appointments a ON p.provider_id = a.provider_id
+        JOIN Appointments a ON p.provider_id = a.provider_id
     JOIN Reviews rev ON a.app_id = rev.app_id AND rev.review_direction = 'receiver_to_provider'
     WHERE p.provider_status = 'active'
       AND EXISTS (
@@ -192,7 +188,7 @@ async function getTopProvidersByAverageRating(limit = 5) {
         WHERE ps.provider_id = p.provider_id
           AND ps.approval_status = 'approved'
       )
-    GROUP BY p.provider_id, u.display_name, p.provider_status
+    GROUP BY p.provider_id, p.display_name, p.provider_status
     ORDER BY average_rating DESC, review_count DESC
     LIMIT ${rowLimit}
   `);
@@ -201,12 +197,11 @@ async function getTopProvidersByAverageRating(limit = 5) {
 async function getLowRatingProviders(limit = 5) {
   const rowLimit = safeLimit(limit, 5);
   return query(`
-    SELECT p.provider_id, u.display_name AS provider_name, ROUND(AVG(rev.rating), 2) AS average_rating, COUNT(rev.review_id) AS review_count
+    SELECT p.provider_id, p.display_name AS provider_name, ROUND(AVG(rev.rating), 2) AS average_rating, COUNT(rev.review_id) AS review_count
     FROM Providers p
-    JOIN Users u ON p.user_id = u.user_id
-    JOIN Appointments a ON p.provider_id = a.provider_id
+        JOIN Appointments a ON p.provider_id = a.provider_id
     JOIN Reviews rev ON a.app_id = rev.app_id AND rev.review_direction = 'receiver_to_provider'
-    GROUP BY p.provider_id, u.display_name
+    GROUP BY p.provider_id, p.display_name
     ORDER BY average_rating ASC, review_count DESC
     LIMIT ${rowLimit}
   `);
@@ -240,14 +235,12 @@ async function getRevenueByService(limit = 10) {
 async function getUnpaidPayments(limit = 10) {
   const rowLimit = safeLimit(limit, 10);
   return query(`
-    SELECT pay.payment_id, pay.app_id, pay.total_amount, ru.display_name AS receiver_name, pu.display_name AS provider_name, s.service_name
+    SELECT pay.payment_id, pay.app_id, pay.total_amount, r.display_name AS receiver_name, p.display_name AS provider_name, s.service_name
     FROM Payments pay
     JOIN Appointments a ON pay.app_id = a.app_id
     JOIN Receivers r ON a.receiver_id = r.receiver_id
-    JOIN Users ru ON r.user_id = ru.user_id
-    JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
-    JOIN Services s ON a.service_id = s.service_id
+        JOIN Providers p ON a.provider_id = p.provider_id
+        JOIN Services s ON a.service_id = s.service_id
     WHERE pay.payment_status = 'unpaid'
     ORDER BY pay.payment_id DESC
     LIMIT ${rowLimit}
@@ -257,13 +250,11 @@ async function getUnpaidPayments(limit = 10) {
 async function getCompletedAppointmentsWithoutPayment(limit = 10) {
   const rowLimit = safeLimit(limit, 10);
   return query(`
-    SELECT a.app_id, a.scheduled_time, ru.display_name AS receiver_name, pu.display_name AS provider_name, s.service_name, a.actual_total
+    SELECT a.app_id, a.scheduled_time, r.display_name AS receiver_name, p.display_name AS provider_name, s.service_name, a.actual_total
     FROM Appointments a
     JOIN Receivers r ON a.receiver_id = r.receiver_id
-    JOIN Users ru ON r.user_id = ru.user_id
-    JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
-    JOIN Services s ON a.service_id = s.service_id
+        JOIN Providers p ON a.provider_id = p.provider_id
+        JOIN Services s ON a.service_id = s.service_id
     LEFT JOIN Payments pay ON a.app_id = pay.app_id
     WHERE a.appointment_status = 'completed' AND pay.payment_id IS NULL
     ORDER BY a.scheduled_time DESC
@@ -273,13 +264,11 @@ async function getCompletedAppointmentsWithoutPayment(limit = 10) {
 
 async function getPendingAppointmentsOlderThan(hours = 48) {
   return query(`
-    SELECT a.app_id, a.scheduled_time, ru.display_name AS receiver_name, pu.display_name AS provider_name, s.service_name
+    SELECT a.app_id, a.scheduled_time, r.display_name AS receiver_name, p.display_name AS provider_name, s.service_name
     FROM Appointments a
     JOIN Receivers r ON a.receiver_id = r.receiver_id
-    JOIN Users ru ON r.user_id = ru.user_id
-    JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
-    JOIN Services s ON a.service_id = s.service_id
+        JOIN Providers p ON a.provider_id = p.provider_id
+        JOIN Services s ON a.service_id = s.service_id
     WHERE a.appointment_status = 'pending'
       AND a.created_at < DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? HOUR)
     ORDER BY a.created_at ASC
@@ -290,11 +279,10 @@ async function getPendingAppointmentsOlderThan(hours = 48) {
 async function getReceiversByAppointmentCount(limit = 5) {
   const rowLimit = safeLimit(limit, 5);
   return query(`
-    SELECT r.receiver_id, u.display_name AS receiver_name, COUNT(a.app_id) AS appointment_count
+    SELECT r.receiver_id, r.display_name AS receiver_name, COUNT(a.app_id) AS appointment_count
     FROM Receivers r
-    JOIN Users u ON r.user_id = u.user_id
-    LEFT JOIN Appointments a ON r.receiver_id = a.receiver_id
-    GROUP BY r.receiver_id, u.display_name
+        LEFT JOIN Appointments a ON r.receiver_id = a.receiver_id
+    GROUP BY r.receiver_id, r.display_name
     ORDER BY appointment_count DESC, receiver_name
     LIMIT ${rowLimit}
   `);
@@ -302,10 +290,9 @@ async function getReceiversByAppointmentCount(limit = 5) {
 
 async function getProvidersWithNoServices() {
   return query(`
-    SELECT p.provider_id, u.display_name AS provider_name, p.provider_status
+    SELECT p.provider_id, p.display_name AS provider_name, p.provider_status
     FROM Providers p
-    JOIN Users u ON p.user_id = u.user_id
-    LEFT JOIN Provider_Services ps ON p.provider_id = ps.provider_id
+        LEFT JOIN Provider_Services ps ON p.provider_id = ps.provider_id
     WHERE ps.provider_id IS NULL
     ORDER BY provider_name
     LIMIT 10
@@ -314,12 +301,11 @@ async function getProvidersWithNoServices() {
 
 async function getActiveProvidersWithNoAppointments() {
   return query(`
-    SELECT p.provider_id, u.display_name AS provider_name
+    SELECT p.provider_id, p.display_name AS provider_name
     FROM Providers p
-    JOIN Users u ON p.user_id = u.user_id
-    LEFT JOIN Appointments a ON p.provider_id = a.provider_id
+        LEFT JOIN Appointments a ON p.provider_id = a.provider_id
     WHERE p.provider_status = 'active'
-    GROUP BY p.provider_id, u.display_name
+    GROUP BY p.provider_id, p.display_name
     HAVING COUNT(a.app_id) = 0
     ORDER BY provider_name
     LIMIT 10
@@ -329,14 +315,12 @@ async function getActiveProvidersWithNoAppointments() {
 async function getLowRatingReviews(limit = 10) {
   const rowLimit = safeLimit(limit, 10);
   return query(`
-    SELECT rev.review_id, rev.app_id, rev.rating, rev.review_direction, rev.comment, pu.display_name AS provider_name, ru.display_name AS receiver_name
+    SELECT rev.review_id, rev.app_id, rev.rating, rev.review_direction, rev.comment, p.display_name AS provider_name, r.display_name AS receiver_name
     FROM Reviews rev
     JOIN Appointments a ON rev.app_id = a.app_id
     JOIN Providers p ON a.provider_id = p.provider_id
-    JOIN Users pu ON p.user_id = pu.user_id
-    JOIN Receivers r ON a.receiver_id = r.receiver_id
-    JOIN Users ru ON r.user_id = ru.user_id
-    WHERE rev.rating <= 3
+        JOIN Receivers r ON a.receiver_id = r.receiver_id
+        WHERE rev.rating <= 3
     ORDER BY rev.rating ASC, rev.created_at DESC
     LIMIT ${rowLimit}
   `);

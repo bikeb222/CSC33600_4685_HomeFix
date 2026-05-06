@@ -19,46 +19,28 @@ DROP TABLE IF EXISTS Providers;
 DROP TABLE IF EXISTS Receivers;
 DROP TABLE IF EXISTS Users;
 
-CREATE TABLE Users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    role VARCHAR(20) NOT NULL,
+CREATE TABLE Receivers (
+    receiver_id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(100) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     display_name VARCHAR(80) NOT NULL,
     phone VARCHAR(20),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT chk_users_role
-        CHECK (role IN ('manager', 'provider', 'receiver'))
-);
-
-CREATE TABLE Receivers (
-    receiver_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL UNIQUE,
     language VARCHAR(30),
     wallet_balance DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_receivers_user
-        FOREIGN KEY (user_id)
-        REFERENCES Users(user_id)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Providers (
     provider_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    display_name VARCHAR(80) NOT NULL,
+    phone VARCHAR(20),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     provider_status VARCHAR(20) NOT NULL DEFAULT 'active',
     biography VARCHAR(1000),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_providers_user
-        FOREIGN KEY (user_id)
-        REFERENCES Users(user_id)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE,
 
     CONSTRAINT chk_provider_status
         CHECK (provider_status IN ('active', 'resting', 'inactive', 'suspended'))
@@ -87,15 +69,13 @@ ON Provider_Unavailable_Blocks(provider_id, start_time, end_time);
 
 CREATE TABLE Managers (
     manager_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    display_name VARCHAR(80) NOT NULL,
+    phone VARCHAR(20),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     department VARCHAR(80),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_managers_user
-        FOREIGN KEY (user_id)
-        REFERENCES Users(user_id)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Services (
@@ -332,84 +312,6 @@ CREATE TABLE Reviews (
 );
 
 DELIMITER $$
-
-CREATE TRIGGER trg_receivers_user_role_before_insert
-BEFORE INSERT ON Receivers
-FOR EACH ROW
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM Users
-        WHERE user_id = NEW.user_id AND role = 'receiver'
-    ) THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Receivers.user_id must reference a user with role receiver';
-    END IF;
-END$$
-
-CREATE TRIGGER trg_receivers_user_role_before_update
-BEFORE UPDATE ON Receivers
-FOR EACH ROW
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM Users
-        WHERE user_id = NEW.user_id AND role = 'receiver'
-    ) THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Receivers.user_id must reference a user with role receiver';
-    END IF;
-END$$
-
-CREATE TRIGGER trg_providers_user_role_before_insert
-BEFORE INSERT ON Providers
-FOR EACH ROW
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM Users
-        WHERE user_id = NEW.user_id AND role = 'provider'
-    ) THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Providers.user_id must reference a user with role provider';
-    END IF;
-END$$
-
-CREATE TRIGGER trg_providers_user_role_before_update
-BEFORE UPDATE ON Providers
-FOR EACH ROW
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM Users
-        WHERE user_id = NEW.user_id AND role = 'provider'
-    ) THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Providers.user_id must reference a user with role provider';
-    END IF;
-END$$
-
-CREATE TRIGGER trg_managers_user_role_before_insert
-BEFORE INSERT ON Managers
-FOR EACH ROW
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM Users
-        WHERE user_id = NEW.user_id AND role = 'manager'
-    ) THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Managers.user_id must reference a user with role manager';
-    END IF;
-END$$
-
-CREATE TRIGGER trg_managers_user_role_before_update
-BEFORE UPDATE ON Managers
-FOR EACH ROW
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM Users
-        WHERE user_id = NEW.user_id AND role = 'manager'
-    ) THEN
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'Managers.user_id must reference a user with role manager';
-    END IF;
-END$$
 
 CREATE TRIGGER trg_provider_services_review_state_before_insert
 BEFORE INSERT ON Provider_Services
@@ -778,8 +680,8 @@ DELIMITER ;
 CREATE OR REPLACE VIEW vw_tableau_appointment_report AS
 SELECT
     a.app_id,
-    ru.display_name AS receiver_name,
-    pu.display_name AS provider_name,
+    r.display_name AS receiver_name,
+    p.display_name AS provider_name,
     s.service_name,
     a.scheduled_time,
     a.appointment_status,
@@ -793,9 +695,7 @@ SELECT
     CONCAT(ad.street, ', ', ad.city, ', ', COALESCE(ad.state, ''), ' ', COALESCE(ad.zip_code, '')) AS service_address
 FROM Appointments a
 JOIN Receivers r ON a.receiver_id = r.receiver_id
-JOIN Users ru ON r.user_id = ru.user_id
 JOIN Providers p ON a.provider_id = p.provider_id
-JOIN Users pu ON p.user_id = pu.user_id
 JOIN Services s ON a.service_id = s.service_id
 JOIN Addresses ad ON a.address_id = ad.address_id;
 
@@ -803,8 +703,8 @@ CREATE OR REPLACE VIEW vw_tableau_payment_report AS
 SELECT
     pay.payment_id,
     pay.app_id,
-    ru.display_name AS receiver_name,
-    pu.display_name AS provider_name,
+    r.display_name AS receiver_name,
+    p.display_name AS provider_name,
     s.service_name,
     pay.total_amount,
     pay.commission_rate,
@@ -815,20 +715,17 @@ SELECT
 FROM Payments pay
 JOIN Appointments a ON pay.app_id = a.app_id
 JOIN Receivers r ON a.receiver_id = r.receiver_id
-JOIN Users ru ON r.user_id = ru.user_id
 JOIN Providers p ON a.provider_id = p.provider_id
-JOIN Users pu ON p.user_id = pu.user_id
 JOIN Services s ON a.service_id = s.service_id;
 
 CREATE OR REPLACE VIEW vw_tableau_provider_performance AS
 SELECT
     p.provider_id,
-    u.display_name AS provider_name,
+    p.display_name AS provider_name,
     COALESCE(completed.completed_appointments_count, 0) AS completed_appointments_count,
     COALESCE(ratings.average_rating, 0) AS average_rating,
     COALESCE(payouts.total_payout, 0) AS total_payout
 FROM Providers p
-JOIN Users u ON p.user_id = u.user_id
 LEFT JOIN (
     SELECT provider_id, COUNT(*) AS completed_appointments_count
     FROM Appointments
