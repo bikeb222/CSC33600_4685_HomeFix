@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.2.8 Chrome/140.0.7339.240 Electron/38.4.0 Safari/537.36" version="28.2.8">
-  <diagram name="Homefix ERD v7 - role tables without Users" id="homefix-erd-v7-role-tables">
-    <mxGraphModel dx="2951" dy="1716" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2500" pageHeight="2250" math="0" shadow="0">
+  <diagram name="Homefix ERD v8 - pricing and revenue update" id="homefix-erd-v8-pricing-revenue">
+    <mxGraphModel dx="2431" dy="1413" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2500" pageHeight="2250" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -668,7 +668,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="appointments" value="Appointment" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
-          <mxGeometry x="690" y="1160" width="620" height="450" as="geometry" />
+          <mxGeometry x="690" y="1160" width="620" height="600" as="geometry" />
         </mxCell>
         <mxCell id="appointments_r1" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;html=1;fontSize=14;fontFamily=Verdana;bottom=1;" parent="appointments" vertex="1">
           <mxGeometry y="30" width="620" height="30" as="geometry" />
@@ -756,7 +756,7 @@
             <mxRectangle width="60" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="appointments_r7_f" value="hourly_rate_at_booking DECIMAL(8,2)" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r7" vertex="1">
+        <mxCell id="appointments_r7_f" value="provider_base_hourly_rate_at_booking DECIMAL(8,2)" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r7" vertex="1">
           <mxGeometry x="60" width="560" height="30" as="geometry">
             <mxRectangle width="560" height="30" as="alternateBounds" />
           </mxGeometry>
@@ -769,7 +769,7 @@
             <mxRectangle width="60" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="appointments_r8_f" value="schedule_surcharge_rate DECIMAL(5,4)" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r8" vertex="1">
+        <mxCell id="appointments_r8_f" value="platform_fee_rate DECIMAL(5,4)" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r8" vertex="1">
           <mxGeometry x="60" width="560" height="30" as="geometry">
             <mxRectangle width="560" height="30" as="alternateBounds" />
           </mxGeometry>
@@ -782,7 +782,7 @@
             <mxRectangle width="60" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="appointments_r9_f" value="schedule_surcharge_reason VARCHAR(30)" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r9" vertex="1">
+        <mxCell id="appointments_r9_f" value="receiver_base_hourly_rate_at_booking DECIMAL(8,2) GENERATED" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r9" vertex="1">
           <mxGeometry x="60" width="560" height="30" as="geometry">
             <mxRectangle width="560" height="30" as="alternateBounds" />
           </mxGeometry>
@@ -795,7 +795,7 @@
             <mxRectangle width="60" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="appointments_r10_f" value="estimated_hours DECIMAL(5,2)" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r10" vertex="1">
+        <mxCell id="appointments_r10_f" value="schedule_surcharge_rate DECIMAL(5,4)" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r10" vertex="1">
           <mxGeometry x="60" width="560" height="30" as="geometry">
             <mxRectangle width="560" height="30" as="alternateBounds" />
           </mxGeometry>
@@ -808,7 +808,7 @@
             <mxRectangle width="60" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="appointments_r11_f" value="actual_hours DECIMAL(5,2) NULL" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r11" vertex="1">
+        <mxCell id="appointments_r11_f" value="schedule_surcharge_reason VARCHAR(30)" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r11" vertex="1">
           <mxGeometry x="60" width="560" height="30" as="geometry">
             <mxRectangle width="560" height="30" as="alternateBounds" />
           </mxGeometry>
@@ -821,7 +821,7 @@
             <mxRectangle width="60" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="appointments_r12_f" value="estimated_total GENERATED" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r12" vertex="1">
+        <mxCell id="appointments_r12_f" value="estimated_hours DECIMAL(5,2)" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r12" vertex="1">
           <mxGeometry x="60" width="560" height="30" as="geometry">
             <mxRectangle width="560" height="30" as="alternateBounds" />
           </mxGeometry>
@@ -834,7 +834,7 @@
             <mxRectangle width="60" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="appointments_r13_f" value="actual_total GENERATED" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r13" vertex="1">
+        <mxCell id="appointments_r13_f" value="tip_amount DECIMAL(10,2)" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r13" vertex="1">
           <mxGeometry x="60" width="560" height="30" as="geometry">
             <mxRectangle width="560" height="30" as="alternateBounds" />
           </mxGeometry>
@@ -847,7 +847,72 @@
             <mxRectangle width="60" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="appointments_r14_f" value="created_at TIMESTAMP" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r14" vertex="1">
+        <mxCell id="appointments_r14_f" value="actual_hours DECIMAL(5,2) NULL" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r14" vertex="1">
+          <mxGeometry x="60" width="560" height="30" as="geometry">
+            <mxRectangle width="560" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="appointments_r15" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;html=1;fontSize=14;fontFamily=Verdana;bottom=0;" parent="appointments" vertex="1">
+          <mxGeometry y="450" width="620" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="appointments_r15_k" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r15" vertex="1">
+          <mxGeometry width="60" height="30" as="geometry">
+            <mxRectangle width="60" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="appointments_r15_f" value="estimated_total DECIMAL(10,2) GENERATED" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r15" vertex="1">
+          <mxGeometry x="60" width="560" height="30" as="geometry">
+            <mxRectangle width="560" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="appointments_r16" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;html=1;fontSize=14;fontFamily=Verdana;bottom=0;" parent="appointments" vertex="1">
+          <mxGeometry y="480" width="620" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="appointments_r16_k" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r16" vertex="1">
+          <mxGeometry width="60" height="30" as="geometry">
+            <mxRectangle width="60" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="appointments_r16_f" value="actual_total DECIMAL(10,2) GENERATED" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r16" vertex="1">
+          <mxGeometry x="60" width="560" height="30" as="geometry">
+            <mxRectangle width="560" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="appointments_r17" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;html=1;fontSize=14;fontFamily=Verdana;bottom=0;" parent="appointments" vertex="1">
+          <mxGeometry y="510" width="620" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="appointments_r17_k" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r17" vertex="1">
+          <mxGeometry width="60" height="30" as="geometry">
+            <mxRectangle width="60" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="appointments_r17_f" value="provider_estimated_payout DECIMAL(10,2) GENERATED" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r17" vertex="1">
+          <mxGeometry x="60" width="560" height="30" as="geometry">
+            <mxRectangle width="560" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="appointments_r18" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;html=1;fontSize=14;fontFamily=Verdana;bottom=0;" parent="appointments" vertex="1">
+          <mxGeometry y="540" width="620" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="appointments_r18_k" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r18" vertex="1">
+          <mxGeometry width="60" height="30" as="geometry">
+            <mxRectangle width="60" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="appointments_r18_f" value="provider_actual_payout DECIMAL(10,2) GENERATED" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r18" vertex="1">
+          <mxGeometry x="60" width="560" height="30" as="geometry">
+            <mxRectangle width="560" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="appointments_r19" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;html=1;fontSize=14;fontFamily=Verdana;bottom=0;" parent="appointments" vertex="1">
+          <mxGeometry y="570" width="620" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="appointments_r19_k" value="" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r19" vertex="1">
+          <mxGeometry width="60" height="30" as="geometry">
+            <mxRectangle width="60" height="30" as="alternateBounds" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="appointments_r19_f" value="created_at TIMESTAMP" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="appointments_r19" vertex="1">
           <mxGeometry x="60" width="560" height="30" as="geometry">
             <mxRectangle width="560" height="30" as="alternateBounds" />
           </mxGeometry>
@@ -915,7 +980,7 @@
             <mxRectangle width="60" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="payments_r5_f" value="commission_fee GENERATED" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="payments_r5" vertex="1">
+        <mxCell id="payments_r5_f" value="provider_payout DECIMAL(10,2)" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="payments_r5" vertex="1">
           <mxGeometry x="60" width="460" height="30" as="geometry">
             <mxRectangle width="460" height="30" as="alternateBounds" />
           </mxGeometry>
@@ -928,7 +993,7 @@
             <mxRectangle width="60" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="payments_r6_f" value="provider_payout GENERATED" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="payments_r6" vertex="1">
+        <mxCell id="payments_r6_f" value="commission_fee DECIMAL(10,2) GENERATED" style="shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;" parent="payments_r6" vertex="1">
           <mxGeometry x="60" width="460" height="30" as="geometry">
             <mxRectangle width="460" height="30" as="alternateBounds" />
           </mxGeometry>
@@ -960,7 +1025,7 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="reviews" value="Review" style="shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
-          <mxGeometry x="1575" y="1280" width="560" height="210" as="geometry" />
+          <mxGeometry x="1575" y="1266" width="560" height="210" as="geometry" />
         </mxCell>
         <mxCell id="reviews_r1" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;html=1;fontSize=14;fontFamily=Verdana;bottom=1;" parent="reviews" vertex="1">
           <mxGeometry y="30" width="560" height="30" as="geometry" />
@@ -1040,14 +1105,14 @@
             <mxRectangle width="500" height="30" as="alternateBounds" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="rules" value="&lt;b&gt;Key Business Rules / Constraint Notes&lt;/b&gt;&lt;br&gt;&lt;hr&gt;1. Role tables store account fields directly; there is no User supertype table.&lt;br&gt;2. Provider-service links must be approved by a manager before they can be booked.&lt;br&gt;3. Provider appointments and provider unavailable blocks cannot overlap active appointment windows.&lt;br&gt;4. Provider unavailable blocks require end_time &amp;gt; start_time.&lt;br&gt;5. Address has UNIQUE(address_id, receiver_id), and each receiver can have at most one default address.&lt;br&gt;6. Booking rate snapshot includes schedule surcharge: weekday after-hours +20%, weekend +10%, both +30%.&lt;br&gt;7. Payment requires completed appointments and actual_hours; receiver wallet is deducted when paid.&lt;br&gt;8. Review is limited to receiver_to_provider or provider_to_receiver, with UNIQUE(app_id, review_direction)." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
-          <mxGeometry x="1980" y="1590" width="520" height="300" as="geometry" />
+        <mxCell id="rules" value="&lt;b&gt;Key Business Rules / Constraint Notes&lt;/b&gt;&lt;br&gt;&lt;hr&gt;1. Role tables store account fields directly; there is no User supertype table.&lt;br&gt;2. Provider-service links must be approved by a manager before they can be booked.&lt;br&gt;3. Provider appointments and provider unavailable blocks cannot overlap active appointment windows.&lt;br&gt;4. Provider unavailable blocks require end_time &amp;gt; start_time.&lt;br&gt;5. Address has UNIQUE(address_id, receiver_id), and each receiver can have at most one default address.&lt;br&gt;6. Appointment stores provider base rate and platform_fee_rate; receiver base rate is generated from those fields.&lt;br&gt;7. Schedule surcharge applies to both receiver total and provider payout: after-hours +20%, weekend +10%, both +30%.&lt;br&gt;8. Payment requires completed appointments and actual_hours; total_amount is receiver actual total, provider_payout is provider actual payout, and commission_fee is generated as total_amount - provider_payout.&lt;br&gt;9. Review is limited to receiver_to_provider or provider_to_receiver, with UNIQUE(app_id, review_direction)." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="1980" y="1487" width="520" height="370" as="geometry" />
         </mxCell>
-        <mxCell id="views" value="&lt;b&gt;Reporting Views&lt;/b&gt;&lt;br&gt;&lt;hr&gt;vw_tableau_appointment_report&lt;br&gt;vw_tableau_payment_report&lt;br&gt;vw_tableau_provider_performance&lt;br&gt;&lt;br&gt;Used by Reports page and Tableau/Excel export flow." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
+        <mxCell id="views" value="&lt;b&gt;Reporting / Database Logic&lt;/b&gt;&lt;br&gt;&lt;hr&gt;Views: vw_tableau_appointment_report, vw_tableau_payment_report, vw_tableau_provider_performance.&lt;br&gt;&lt;br&gt;Stored procedures: sp_create_payment_for_completed_appointment, sp_receiver_recharge.&lt;br&gt;&lt;br&gt;Triggers enforce approval, appointment conflicts, payment, and review rules." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
           <mxGeometry x="1450" y="1840" width="530" height="180" as="geometry" />
         </mxCell>
-        <mxCell id="revenue_streams" value="&lt;b&gt;Revenue Streams&lt;/b&gt;&lt;br&gt;&lt;hr&gt;1. Receiver accounts pay completed appointments through Payment.total_amount.&lt;br&gt;2. Homefix earns platform commission through Payment.commission_fee.&lt;br&gt;3. Provider accounts receive net payout through Payment.provider_payout.&lt;br&gt;4. Premium booking windows are represented by schedule_surcharge_rate and schedule_surcharge_reason.&lt;br&gt;5. Wallet balance supports prepaid receiver funds and manager recharge operations." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
-          <mxGeometry x="1980" y="1890" width="520" height="220" as="geometry" />
+        <mxCell id="revenue_streams" value="&lt;b&gt;Revenue Streams&lt;/b&gt;&lt;br&gt;&lt;hr&gt;1. Receiver accounts pay Payment.total_amount, calculated from receiver_base_hourly_rate_at_booking, surcharge, actual hours, and tip.&lt;br&gt;2. Receiver base rate is provider base rate plus platform_fee_rate, currently defaulting to 15%.&lt;br&gt;3. Provider accounts receive Payment.provider_payout, calculated from provider_base_hourly_rate_at_booking, surcharge, actual hours, and tip.&lt;br&gt;4. Homefix earns Payment.commission_fee, generated as total_amount - provider_payout.&lt;br&gt;5. Wallet balance supports prepaid receiver funds and manager recharge operations." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
+          <mxGeometry x="1980" y="1857" width="520" height="253" as="geometry" />
         </mxCell>
         <mxCell id="normalization_note" value="&lt;b&gt;Normalization Note&lt;/b&gt;&lt;br&gt;&lt;hr&gt;The design satisfies at least 2NF: every table uses atomic attributes, each non-key attribute depends on the whole primary key, and many-to-many data such as provider skills is separated into Provider_Service." style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=10;fontSize=14;fontFamily=Verdana;fillColor=none;strokeColor=#000000;" parent="1" vertex="1">
           <mxGeometry x="1980" y="2110" width="520" height="140" as="geometry" />
