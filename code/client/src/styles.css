@@ -223,6 +223,35 @@ main {
   padding: 28px;
 }
 
+.auth-role-nav {
+  position: fixed;
+  top: 22px;
+  right: 24px;
+  display: flex;
+  gap: 8px;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.auth-role-nav a {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 11px;
+  border-radius: 7px;
+  color: #344054;
+  font-weight: 850;
+}
+
+.auth-role-nav a.active,
+.auth-role-nav a:hover {
+  color: #ffffff;
+  background: var(--primary);
+}
+
 .auth-card {
   width: min(100%, 460px);
   display: grid;
@@ -426,6 +455,12 @@ main {
   color: #344054;
   background: #f8fafc;
   border-color: var(--border);
+}
+
+.button.primary-mini {
+  color: #ffffff;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 .icon-button {
@@ -661,7 +696,8 @@ textarea:focus {
 
 .table-wrap {
   width: 100%;
-  overflow-x: auto;
+  max-height: 560px;
+  overflow: auto;
   margin-top: 14px;
 }
 
@@ -683,7 +719,19 @@ td {
   vertical-align: middle;
 }
 
+tr.pending-overlap-row td {
+  background: #fff1f2;
+  border-bottom-color: #fecdd3;
+}
+
+tr.pending-overlap-row td:first-child {
+  border-left: 3px solid #ef4444;
+}
+
 th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   color: #475467;
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -699,7 +747,33 @@ tbody tr:hover {
 }
 
 .row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  width: max-content;
   white-space: nowrap;
+}
+
+.row-actions > * {
+  flex: 0 0 auto;
+}
+
+.row-actions .small-select {
+  width: 154px;
+}
+
+.row-actions .button {
+  min-width: max-content;
+}
+
+.appointments-table table {
+  min-width: 1320px;
+}
+
+.appointments-table th:last-child,
+.appointments-table td:last-child {
+  min-width: 360px;
 }
 
 .empty-cell {
@@ -762,6 +836,12 @@ tbody tr:hover {
   border-color: #99f6e4;
   background: #f0fdfa;
   color: #115e59;
+}
+
+.alert.warning {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #991b1b;
 }
 
 .status-badge {
@@ -926,6 +1006,18 @@ tbody tr:hover {
   color: #92400e;
 }
 
+.status-stack {
+  display: grid;
+  gap: 5px;
+}
+
+.queue-warning {
+  color: #b91c1c;
+  font-size: 0.74rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
 .available-times {
   display: grid;
   gap: 8px;
@@ -982,6 +1074,52 @@ tbody tr:hover {
   background: #fff1f2;
   color: #991b1b;
   font-size: 0.78rem;
+}
+
+.provider-time-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.provider-time-panel > div {
+  min-height: 118px;
+  max-height: 178px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.provider-time-panel span {
+  display: block;
+  margin-bottom: 8px;
+  color: #344054;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.provider-time-panel code,
+.provider-time-panel small {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.76rem;
+}
+
+.provider-time-panel code {
+  padding: 7px 8px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  color: #1e3a8a;
+  background: #eff6ff;
+}
+
+.provider-time-panel .pending-time {
+  border-color: #fecaca;
+  color: #991b1b;
+  background: #fff1f2;
 }
 
 .booking-summary > div,
@@ -1061,6 +1199,250 @@ tbody tr:hover {
   margin-top: 16px;
 }
 
+.visualization-screen {
+  min-height: 100vh;
+  padding: 24px 26px 34px;
+}
+
+.plotly-page {
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.dashboard-visualizations {
+  display: grid;
+  gap: 14px;
+}
+
+.plot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.plot-card,
+.metric-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow);
+}
+
+.plot-card {
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.plot-card.wide-plot,
+.plot-card.wide-map-card {
+  grid-column: 1 / -1;
+}
+
+.plot-card h2 {
+  margin: 0;
+}
+
+.plot-card p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.plot-box {
+  width: 100%;
+  min-height: 360px;
+}
+
+.map-box {
+  min-height: 600px;
+}
+
+.provider-map-section .plot-card {
+  padding: 14px;
+}
+
+.provider-map-section .plot-card > div:first-child {
+  padding: 0 2px;
+}
+
+.calendar-card {
+  min-height: 430px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 12px 0 10px;
+  color: #172033;
+}
+
+.calendar-nav-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.calendar-weekday {
+  color: #667085;
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.calendar-day {
+  position: relative;
+  min-height: 42px;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--status-color, #ffffff) 16%, #ffffff);
+}
+
+.calendar-day:not(.blank) {
+  border-color: color-mix(in srgb, var(--status-color, #d0d5dd) 48%, #d0d5dd);
+}
+
+.calendar-day.blank {
+  background: #f8fafc;
+}
+
+.calendar-day strong {
+  color: #172033;
+  font-size: 0.82rem;
+}
+
+.calendar-day small {
+  position: absolute;
+  right: 6px;
+  bottom: 5px;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: #ffffff;
+  background: var(--status-color, #64748b);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.calendar-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 20;
+  width: min(250px, 72vw);
+  display: none;
+  transform: translateX(-50%);
+  padding: 9px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.15);
+  text-align: left;
+}
+
+.calendar-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  transform: translateX(-50%) rotate(45deg);
+  border-right: 1px solid #bfdbfe;
+  border-bottom: 1px solid #bfdbfe;
+  background: #ffffff;
+}
+
+.calendar-day:hover .calendar-tooltip,
+.calendar-day:focus-within .calendar-tooltip {
+  display: grid;
+  gap: 8px;
+}
+
+.calendar-tooltip div {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 8px;
+}
+
+.calendar-tooltip div + div {
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.calendar-tooltip b {
+  grid-column: 1 / 2;
+  color: #172033;
+  font-size: 0.76rem;
+}
+
+.calendar-tooltip span {
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  width: fit-content;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: #1e3a8a;
+  background: #dbeafe;
+  font-size: 0.64rem;
+  font-weight: 900;
+  text-transform: capitalize;
+}
+
+.calendar-tooltip em,
+.calendar-tooltip p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #667085;
+  font-size: 0.7rem;
+  font-style: normal;
+  line-height: 1.28;
+}
+
+.calendar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 12px;
+}
+
+.calendar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #667085;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.calendar-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+}
+
+.metric-card {
+  padding: 17px;
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.6rem;
+}
+
 .endpoint-grid > div {
   display: grid;
   gap: 9px;
@@ -1123,7 +1505,10 @@ tbody tr:hover {
 }
 
 .check-line input {
-  width: auto;
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
+  padding: 0;
 }
 
 .small-select {
@@ -1253,7 +1638,8 @@ tbody tr:hover {
   .metric-grid,
   .dashboard-grid,
   .dashboard-grid.two,
-  .report-card-grid {
+  .report-card-grid,
+  .plot-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1304,10 +1690,12 @@ tbody tr:hover {
   .dashboard-grid,
   .dashboard-grid.two,
   .report-card-grid,
+  .plot-grid,
   .form-grid.two,
   .booking-form .form-grid,
   .booking-summary,
-  .available-times > div {
+  .available-times > div,
+  .provider-time-panel {
     grid-template-columns: 1fr;
   }
 
@@ -1340,5 +1728,12 @@ tbody tr:hover {
 
   .ai-composer {
     grid-template-columns: 1fr;
+  }
+
+  .auth-role-nav {
+    position: static;
+    justify-self: stretch;
+    margin-bottom: 14px;
+    justify-content: center;
   }
 }

@@ -1,20 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from 'recharts';
-import {
   BriefcaseBusiness,
   CalendarCheck,
   CalendarClock,
@@ -40,100 +26,7 @@ import PageHeader from '../components/common/PageHeader';
 import StatCard from '../components/common/StatCard';
 import { currency, shortDateTime } from '../utils/format';
 
-const statusColors = {
-  pending: '#f59e0b',
-  accepted: '#2563eb',
-  rejected: '#dc2626',
-  in_progress: '#7c3aed',
-  completed: '#16a34a',
-  cancelled: '#64748b',
-  no_show: '#ea580c'
-};
-
-function byDateKey(dateValue) {
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(dateValue));
-}
-
-function appointmentStatusData(appointments) {
-  return Object.entries(
-    appointments.reduce((acc, appointment) => {
-      acc[appointment.appointment_status] = (acc[appointment.appointment_status] || 0) + 1;
-      return acc;
-    }, {})
-  ).map(([name, value]) => ({ name, value }));
-}
-
-function paidAmountByDate(payments, amountKey = 'total_amount') {
-  return Object.values(
-    payments.reduce((acc, payment) => {
-      const key = byDateKey(payment.payment_date || payment.scheduled_time || new Date());
-      if (!acc[key]) {
-        acc[key] = { date: key, amount: 0 };
-      }
-      if (payment.payment_status === 'paid') {
-        acc[key].amount += Number(payment[amountKey] || 0);
-      }
-      return acc;
-    }, {})
-  );
-}
-
-function AppointmentStatusPanel({ appointments, title = 'Appointment Status', description = 'Distribution across the current booking pipeline.' }) {
-  const statusDistribution = appointmentStatusData(appointments);
-
-  return (
-    <section className="panel chart-panel">
-      <PageHeader title={title} description={description} />
-      <div className="chart-box">
-        <ResponsiveContainer width="100%" height={260}>
-          <PieChart>
-            <Pie data={statusDistribution} dataKey="value" nameKey="name" innerRadius={58} outerRadius={92} paddingAngle={4}>
-              {statusDistribution.map((entry) => (
-                <Cell key={entry.name} fill={statusColors[entry.name] || '#94a3b8'} />
-              ))}
-            </Pie>
-            <Tooltip formatter={(value, name) => [value, String(name).replaceAll('_', ' ')]} />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="legend-grid">
-        {statusDistribution.map((item) => (
-          <span key={item.name}>
-            <i style={{ background: statusColors[item.name] || '#94a3b8' }} />
-            {item.name.replaceAll('_', ' ')} ({item.value})
-          </span>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function MoneyTrendPanel({ rows, title, description, amountKey = 'total_amount', color = '#2563eb' }) {
-  const data = paidAmountByDate(rows, amountKey);
-
-  return (
-    <section className="panel chart-panel">
-      <PageHeader title={title} description={description} />
-      <div className="chart-box">
-        <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={data}>
-            <defs>
-              <linearGradient id={`moneyFill-${amountKey}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={color} stopOpacity={0.28} />
-                <stop offset="95%" stopColor={color} stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis dataKey="date" tickLine={false} axisLine={false} />
-            <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-            <Tooltip formatter={(value) => currency(value)} />
-            <Area type="monotone" dataKey="amount" stroke={color} fill={`url(#moneyFill-${amountKey})`} strokeWidth={3} />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    </section>
-  );
-}
+const DashboardVisualizations = React.lazy(() => import('../components/DashboardVisualizations'));
 
 function appointmentColumns(role) {
   const columns = [
@@ -206,39 +99,25 @@ function ManagerDashboard({ stats, appointments, payments, providers }) {
         <StatCard label="Pending" value={stats.pending_appointments ?? 0} icon={Clock} tone="amber" helper="Awaiting action" />
       </div>
 
-      <div className="dashboard-grid">
-        <AppointmentStatusPanel appointments={appointments} />
-        <MoneyTrendPanel rows={payments} title="Revenue Summary" description="Paid revenue grouped by payment date." />
-        <section className="panel chart-panel wide-chart">
-          <PageHeader title="Provider Performance" description="Total payout by provider for paid appointments." />
-          <div className="chart-box">
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={topProviders}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="provider_name" tickLine={false} axisLine={false} />
-                <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                <Tooltip formatter={(value) => currency(value)} />
-                <Bar dataKey="total_payout" fill="#10b981" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-        <section className="panel top-providers">
-          <PageHeader title="Top Providers" description="Ranked by payout and review score." />
-          <div className="provider-list">
-            {topProviders.map((provider, index) => (
-              <div className="provider-row" key={provider.provider_id}>
-                <span>{index + 1}</span>
-                <div>
-                  <strong>{provider.provider_name}</strong>
-                  <small>{provider.completed_appointments_count} completed, rating {provider.average_rating || 0}</small>
-                </div>
-                <b>{currency(provider.total_payout)}</b>
+      <React.Suspense fallback={<LoadingState />}>
+        <DashboardVisualizations role="manager" appointments={appointments} payments={payments} providers={providers} reviews={[]} />
+      </React.Suspense>
+
+      <section className="panel top-providers">
+        <PageHeader title="Top Providers" description="Ranked by payout and review score." />
+        <div className="provider-list">
+          {topProviders.map((provider, index) => (
+            <div className="provider-row" key={provider.provider_id}>
+              <span>{index + 1}</span>
+              <div>
+                <strong>{provider.provider_name}</strong>
+                <small>{provider.completed_appointments_count} completed, rating {provider.average_rating || 0}</small>
               </div>
-            ))}
-          </div>
-        </section>
-      </div>
+              <b>{currency(provider.total_payout)}</b>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <div className="dashboard-grid two">
         <DataTable title="Recent Appointments" rows={appointments.slice(0, 6)} rowKey="app_id" compact columns={appointmentColumns('manager')} emptyTitle="No appointments" />
@@ -281,9 +160,27 @@ function ProviderDashboard({ stats, appointments, payments, services, reviews })
         <StatCard label="My Services" value={stats.total_services ?? services.length} icon={BriefcaseBusiness} tone="purple" helper="Offered categories" />
       </div>
 
-      <div className="dashboard-grid">
-        <AppointmentStatusPanel appointments={appointments} title="My Appointment Pipeline" description="Status mix for appointments assigned to you." />
-        <MoneyTrendPanel rows={payments} title="Payout Trend" description="Paid provider payout grouped by payment date." amountKey="provider_payout" color="#10b981" />
+      <div className="page-header compact-heading">
+        <div>
+          <h2>My Visualizations</h2>
+          <p>Pipeline, payout, workload, and feedback views for your provider account.</p>
+        </div>
+      </div>
+
+      <React.Suspense fallback={<LoadingState />}>
+        <DashboardVisualizations role="provider" appointments={appointments} payments={payments} providers={[]} reviews={reviews} />
+      </React.Suspense>
+
+      <React.Suspense fallback={<LoadingState />}>
+        <DashboardVisualizations role="provider-map" appointments={appointments} payments={payments} providers={[]} reviews={reviews} />
+      </React.Suspense>
+
+      <div className="dashboard-grid two">
+        <DataTable title="Upcoming Work" description="Jobs that still need action or completion." rows={upcoming} rowKey="app_id" compact columns={appointmentColumns('provider')} emptyTitle="No upcoming work" />
+        <DataTable title="My Payments" rows={payments.slice(0, 6)} rowKey="payment_id" compact columns={paymentColumns('provider')} emptyTitle="No payments" />
+      </div>
+
+      <div className="dashboard-grid two">
         <section className="panel top-providers">
           <PageHeader title="My Service Menu" description="Services you currently offer and base hourly rates." />
           <div className="provider-list">
@@ -299,26 +196,21 @@ function ProviderDashboard({ stats, appointments, payments, services, reviews })
             ))}
           </div>
         </section>
-      </div>
 
-      <div className="dashboard-grid two">
-        <DataTable title="Upcoming Work" description="Jobs that still need action or completion." rows={upcoming} rowKey="app_id" compact columns={appointmentColumns('provider')} emptyTitle="No upcoming work" />
-        <DataTable title="My Payments" rows={payments.slice(0, 6)} rowKey="payment_id" compact columns={paymentColumns('provider')} emptyTitle="No payments" />
+        <DataTable
+          title="Recent Reviews"
+          rows={recentReviews}
+          rowKey="review_id"
+          compact
+          columns={[
+            { key: 'review_direction', label: 'Direction', render: (row) => <StatusBadge value={row.review_direction} /> },
+            { key: 'rating', label: 'Rating', render: (row) => `${row.rating}/5` },
+            { key: 'receiver_name', label: 'Receiver' },
+            { key: 'comment', label: 'Comment' }
+          ]}
+          emptyTitle="No reviews yet"
+        />
       </div>
-
-      <DataTable
-        title="Recent Reviews"
-        rows={recentReviews}
-        rowKey="review_id"
-        compact
-        columns={[
-          { key: 'review_direction', label: 'Direction', render: (row) => <StatusBadge value={row.review_direction} /> },
-          { key: 'rating', label: 'Rating', render: (row) => `${row.rating}/5` },
-          { key: 'receiver_name', label: 'Receiver' },
-          { key: 'comment', label: 'Comment' }
-        ]}
-        emptyTitle="No reviews yet"
-      />
     </>
   );
 }
@@ -357,25 +249,25 @@ function ReceiverDashboard({ stats, appointments, payments, addresses, services,
         <StatCard label="Service Types" value={services.length} icon={Home} tone="slate" helper="Available catalog options" />
       </div>
 
-      <div className="dashboard-grid">
-        <AppointmentStatusPanel appointments={appointments} title="My Booking Status" description="Status mix for your appointment history." />
-        <MoneyTrendPanel rows={payments} title="Payment History" description="Paid totals grouped by payment date." />
-        <section className="panel top-providers">
-          <PageHeader title="Recommended Services" description="Start a booking from the current service catalog." />
-          <div className="provider-list">
-            {recommendedServices.map((service) => (
-              <div className="provider-row" key={service.service_id}>
-                <span><Wrench size={15} /></span>
-                <div>
-                  <strong>{service.service_name}</strong>
-                  <small>{service.provider_count || 0} active provider links</small>
-                </div>
-                <Link className="button mini" to="/services">Book</Link>
+      <React.Suspense fallback={<LoadingState />}>
+        <DashboardVisualizations role="receiver" appointments={appointments} payments={payments} providers={[]} reviews={reviews} />
+      </React.Suspense>
+
+      <section className="panel top-providers">
+        <PageHeader title="Recommended Services" description="Start a booking from the current service catalog." />
+        <div className="provider-list">
+          {recommendedServices.map((service) => (
+            <div className="provider-row" key={service.service_id}>
+              <span><Wrench size={15} /></span>
+              <div>
+                <strong>{service.service_name}</strong>
+                <small>{service.provider_count || 0} active provider links</small>
               </div>
-            ))}
-          </div>
-        </section>
-      </div>
+              <Link className="button mini" to="/services">Book</Link>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <div className="dashboard-grid two">
         <DataTable title="Upcoming Appointments" rows={upcoming} rowKey="app_id" compact columns={appointmentColumns('receiver')} emptyTitle="No upcoming appointments" />

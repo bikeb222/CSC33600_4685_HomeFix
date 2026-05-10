@@ -15,7 +15,8 @@ export default function DataTable({
   emptyTitle,
   emptyDescription,
   compact = false,
-  className = ''
+  className = '',
+  rowClassName
 }) {
   const [query, setQuery] = React.useState('');
   const filtered = rows.filter((row) => {
@@ -65,7 +66,10 @@ export default function DataTable({
             </thead>
             <tbody>
               {filtered.map((row) => (
-                <tr key={typeof rowKey === 'function' ? rowKey(row) : row[rowKey]}>
+                <tr
+                  key={typeof rowKey === 'function' ? rowKey(row) : row[rowKey]}
+                  className={rowClassName ? rowClassName(row) : undefined}
+                >
                   {columns.map((column) => (
                     <td key={column.key}>
                       {column.render ? column.render(row) : row[column.key]}

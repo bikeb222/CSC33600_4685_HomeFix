@@ -11,7 +11,7 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   decimalNumbers: true,
-  dateStrings: false
+  dateStrings: true
 });
 
 async function query(sql, params = []) {

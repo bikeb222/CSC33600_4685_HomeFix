@@ -42,9 +42,9 @@ async function register(payload, actor = null) {
     throw new AppError('Manager accounts can only be created by a manager', 403);
   }
 
-  const existing = await userModel.findByEmail(payload.email);
+  const existing = await userModel.findByEmail(payload.email, payload.role);
   if (existing) {
-    throw new AppError('Email is already registered', 409);
+    throw new AppError('Email is already registered for this role', 409);
   }
 
   const password_hash = await bcrypt.hash(payload.password, 10);
@@ -78,9 +78,10 @@ async function register(payload, actor = null) {
 }
 
 async function login(payload) {
-  requireFields(payload, ['email', 'password']);
+  requireFields(payload, ['role', 'email', 'password']);
+  assertStatus(payload.role, roles, 'role');
   validateEmail(payload.email);
-  const user = await userModel.findByEmail(payload.email);
+  const user = await userModel.findByEmail(payload.email, payload.role);
 
   const passwordMatches = user ? await bcrypt.compare(payload.password, user.password_hash) : false;
   if (!user || !passwordMatches || !user.is_active) {
@@ -116,9 +117,19 @@ async function updateUser(id, payload) {
   if (Object.keys(updatePayload).length === 0) {
     throw new AppError('No user fields were provided for update', 400);
   }
-  const affectedRows = await userModel.update(id, updatePayload);
-  if (!affectedRows) {
-    throw new AppError('User not found', 404);
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const affectedRows = await userModel.update(id, updatePayload, connection);
+    if (!affectedRows) {
+      throw new AppError('User not found', 404);
+    }
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
   }
   return me(id);
 }

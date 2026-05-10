@@ -1,5 +1,6 @@
 const receiverModel = require('../models/receiverModel');
 const authService = require('./authService');
+const { pool } = require('../config/db');
 const AppError = require('../utils/AppError');
 const { normalizeId } = require('../utils/validators');
 
@@ -46,7 +47,17 @@ async function update(id, payload) {
     throw new AppError('No receiver fields were provided for update', 400);
   }
 
-  await receiverModel.update(receiverId, updatePayload);
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await receiverModel.update(receiverId, updatePayload, connection);
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
   return receiverModel.findById(receiverId);
 }
 

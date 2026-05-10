@@ -9,6 +9,7 @@ router.get('/receivers/:receiverId/appointments', appointmentController.listForR
 router.get('/providers/:providerId/appointments', appointmentController.listForProvider);
 router.put('/appointments/:id/status', appointmentController.updateStatus);
 router.put('/appointments/:id/actual-hours', appointmentController.updateActualHours);
+router.put('/appointments/:id/request', appointmentController.updatePendingRequest);
 router.delete('/appointments/:id', appointmentController.remove);
 
 module.exports = router;

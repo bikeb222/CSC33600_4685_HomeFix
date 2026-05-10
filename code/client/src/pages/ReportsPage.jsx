@@ -1,5 +1,5 @@
 import React from 'react';
-import { CalendarDays, CreditCard, Download, FileSpreadsheet, TrendingUp } from 'lucide-react';
+import { CalendarDays, CreditCard, Download, TrendingUp } from 'lucide-react';
 import { api } from '../api/client';
 import ErrorAlert from '../components/common/ErrorAlert';
 import PageHeader from '../components/common/PageHeader';
@@ -62,8 +62,8 @@ export default function ReportsPage() {
     <div className="page-stack">
       <PageHeader
         eyebrow="Reporting center"
-        title="Excel and Tableau Exports"
-        description="Export operational data for Excel and Tableau analysis."
+        title="Excel and JSON Data Interfaces"
+        description="Export operational reports and inspect the JSON endpoints used by the application."
       />
       <ErrorAlert message={error} onClose={() => setError('')} />
 
@@ -95,20 +95,13 @@ export default function ReportsPage() {
       <section className="panel tableau-panel">
         <div className="panel-heading">
           <div>
-            <h2>Tableau-ready Interfaces</h2>
-            <p>Use the MySQL views directly or connect through JSON endpoints for lightweight demos.</p>
+            <h2>Reporting JSON Endpoints</h2>
+            <p>These read-only interfaces expose the same reporting data as JSON for dashboard charts or external analysis.</p>
           </div>
-          <FileSpreadsheet size={22} />
         </div>
         <div className="endpoint-grid">
           <div>
-            <strong>MySQL Views</strong>
-            <code>vw_tableau_appointment_report</code>
-            <code>vw_tableau_payment_report</code>
-            <code>vw_tableau_provider_performance</code>
-          </div>
-          <div>
-            <strong>JSON Endpoints</strong>
+            <strong>JSON Data Sources</strong>
             {api.reports.jsonUrls.map((endpoint) => (
               <code key={endpoint}>{endpoint}</code>
             ))}

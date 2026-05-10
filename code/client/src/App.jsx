@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './auth/ProtectedRoute';
@@ -17,14 +18,29 @@ import ProfilePage from './pages/ProfilePage';
 import UserManagementPage from './pages/UserManagementPage';
 import AiChatPage from './pages/AiChatPage';
 
+const PlotlyAnalyticsPage = React.lazy(() => import('./pages/PlotlyAnalyticsPage'));
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="login" element={<LoginPage />} />
+        <Route path="login/receiver" element={<LoginPage />} />
+        <Route path="login/provider" element={<LoginPage />} />
+        <Route path="login/manager" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="unauthorized" element={<UnauthorizedPage />} />
         <Route element={<ProtectedRoute />}>
+          <Route element={<RoleRoute roles={['manager']} />}>
+            <Route
+              path="visualizations"
+              element={(
+                <React.Suspense fallback={<div className="state-card"><strong>Loading visualizations...</strong></div>}>
+                  <PlotlyAnalyticsPage />
+                </React.Suspense>
+              )}
+            />
+          </Route>
           <Route element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
           <Route element={<RoleRoute roles={['manager']} />}>

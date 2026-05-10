@@ -162,11 +162,12 @@ CREATE TABLE Appointments (
     schedule_surcharge_rate DECIMAL(5,4) NOT NULL DEFAULT 0.0000,
     schedule_surcharge_reason VARCHAR(30) NOT NULL DEFAULT 'standard_hours',
     estimated_hours DECIMAL(5,2) NOT NULL,
+    tip_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     actual_hours DECIMAL(5,2) NULL,
     estimated_total DECIMAL(10,2)
-        GENERATED ALWAYS AS (hourly_rate_at_booking * estimated_hours) STORED,
+        GENERATED ALWAYS AS ((hourly_rate_at_booking * estimated_hours) + tip_amount) STORED,
     actual_total DECIMAL(10,2)
-        GENERATED ALWAYS AS (hourly_rate_at_booking * COALESCE(actual_hours, estimated_hours)) STORED,
+        GENERATED ALWAYS AS ((hourly_rate_at_booking * COALESCE(actual_hours, estimated_hours)) + tip_amount) STORED,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_appointments_receiver
@@ -218,6 +219,9 @@ CREATE TABLE Appointments (
 
     CONSTRAINT chk_estimated_hours
         CHECK (estimated_hours > 0),
+
+    CONSTRAINT chk_tip_amount
+        CHECK (tip_amount >= 0),
 
     CONSTRAINT chk_actual_hours
         CHECK (actual_hours IS NULL OR actual_hours > 0)
@@ -375,7 +379,7 @@ BEGIN
        AND EXISTS (
            SELECT 1 FROM Appointments existing
            WHERE existing.provider_id = NEW.provider_id
-             AND existing.appointment_status IN ('pending', 'accepted', 'in_progress')
+             AND existing.appointment_status IN ('accepted', 'in_progress')
              AND NEW.scheduled_time < DATE_ADD(
                  existing.scheduled_time,
                  INTERVAL CEIL(COALESCE(existing.actual_hours, existing.estimated_hours) * 60) MINUTE
@@ -433,7 +437,7 @@ BEGIN
            SELECT 1 FROM Appointments existing
            WHERE existing.provider_id = NEW.provider_id
              AND existing.app_id <> NEW.app_id
-             AND existing.appointment_status IN ('pending', 'accepted', 'in_progress')
+             AND existing.appointment_status IN ('accepted', 'in_progress')
              AND NEW.scheduled_time < DATE_ADD(
                  existing.scheduled_time,
                  INTERVAL CEIL(COALESCE(existing.actual_hours, existing.estimated_hours) * 60) MINUTE
@@ -689,6 +693,7 @@ SELECT
     a.schedule_surcharge_rate,
     a.schedule_surcharge_reason,
     a.estimated_hours,
+    a.tip_amount,
     a.estimated_total,
     a.actual_hours,
     a.actual_total,

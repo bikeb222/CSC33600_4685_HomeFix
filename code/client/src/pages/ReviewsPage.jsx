@@ -44,6 +44,7 @@ export default function ReviewsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const handledReviewParam = React.useRef('');
   const [reviews, setReviews] = React.useState([]);
   const [appointments, setAppointments] = React.useState([]);
   const [form, setForm] = React.useState(emptyForm);
@@ -96,9 +97,19 @@ export default function ReviewsPage() {
 
   React.useEffect(() => {
     const appId = searchParams.get('new');
-    if (appId && appointments.length > 0) {
+    if (!appId) {
+      handledReviewParam.current = '';
+      return;
+    }
+    if (loading || handledReviewParam.current === appId || appointments.length === 0) {
+      return;
+    }
+
+    handledReviewParam.current = appId;
+    const completedRows = appointments.filter((appointment) => appointment.appointment_status === 'completed');
+    if (appId) {
       const direction = directionOptions[0];
-      const canReviewAppointment = completedAppointments.some((appointment) => Number(appointment.app_id) === Number(appId))
+      const canReviewAppointment = completedRows.some((appointment) => Number(appointment.app_id) === Number(appId))
         && !reviews.some((review) => Number(review.app_id) === Number(appId) && review.review_direction === direction);
       if (canReviewAppointment) {
         setForm({ ...emptyForm, app_id: appId, review_direction: direction });
@@ -108,7 +119,7 @@ export default function ReviewsPage() {
       }
       navigate('/reviews', { replace: true });
     }
-  }, [searchParams, appointments, reviews, completedAppointments, directionOptions, navigate]);
+  }, [searchParams, appointments, reviews, directionOptions, navigate, loading]);
 
   async function submit(event) {
     event.preventDefault();
@@ -125,6 +136,7 @@ export default function ReviewsPage() {
         ...form,
         review_direction: user.role === 'manager' ? form.review_direction : directionOptions[0]
       });
+      navigate('/reviews', { replace: true });
       setForm({ ...emptyForm, review_direction: directionOptions[0] });
       setModalOpen(false);
       setNotice('Review created successfully.');

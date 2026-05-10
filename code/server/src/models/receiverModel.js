@@ -1,6 +1,14 @@
 const { query } = require('../config/db');
 const { buildUpdateSet } = require('../utils/sql');
 
+async function run(executor, sql, params = []) {
+  if (executor) {
+    const [rows] = await executor.execute(sql, params);
+    return rows;
+  }
+  return query(sql, params);
+}
+
 const receiverColumns = `
   r.receiver_id,
   CONCAT('receiver:', r.receiver_id) AS user_id,
@@ -62,9 +70,9 @@ async function create(receiver) {
   return result.insertId;
 }
 
-async function update(id, payload) {
+async function update(id, payload, executor = null) {
   const { setClause, values } = buildUpdateSet(payload, ['display_name', 'phone', 'is_active', 'language', 'wallet_balance']);
-  const result = await query(`UPDATE Receivers SET ${setClause} WHERE receiver_id = ?`, [...values, id]);
+  const result = await run(executor, `UPDATE Receivers SET ${setClause} WHERE receiver_id = ?`, [...values, id]);
   return result.affectedRows;
 }
 

@@ -58,6 +58,7 @@ exports.exportAppointments = asyncHandler(async (req, res) => {
     { header: 'Service', key: 'service' },
     { header: 'Scheduled Time', key: 'scheduled_time' },
     { header: 'Status', key: 'status' },
+    { header: 'Tip Amount', key: 'tip_amount' },
     { header: 'Estimated Total', key: 'estimated_total' }
   ], rows);
 });
@@ -71,7 +72,8 @@ exports.exportPayments = asyncHandler(async (req, res) => {
     { header: 'Total Amount', key: 'total_amount' },
     { header: 'Commission Fee', key: 'commission_fee' },
     { header: 'Provider Payout', key: 'provider_payout' },
-    { header: 'Payment Status', key: 'payment_status' }
+    { header: 'Payment Status', key: 'payment_status' },
+    { header: 'Payment Date', key: 'payment_date' }
   ], rows);
 });
 

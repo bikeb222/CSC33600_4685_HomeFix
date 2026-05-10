@@ -9,6 +9,7 @@ const rolePaths = {
     '/payments',
     '/reviews',
     '/reports',
+    '/visualizations',
     '/users',
     '/ai-assistant'
   ],

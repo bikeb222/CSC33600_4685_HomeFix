@@ -1,6 +1,14 @@
 const { query } = require('../config/db');
 const { buildUpdateSet } = require('../utils/sql');
 
+async function run(executor, sql, params = []) {
+  if (executor) {
+    const [rows] = await executor.execute(sql, params);
+    return rows;
+  }
+  return query(sql, params);
+}
+
 const roleTables = {
   receiver: {
     table: 'Receivers',
@@ -54,7 +62,16 @@ function commonSelect(role, includePassword = false) {
   `;
 }
 
-async function findByEmail(email) {
+async function findByEmail(email, role = '') {
+  if (role && roleTables[role]) {
+    const rows = await query(`
+      ${commonSelect(role, true)}
+      WHERE email = ?
+      LIMIT 1
+    `, [email]);
+    return rows[0] || null;
+  }
+
   const rows = await query(`
     ${commonSelect('receiver', true)}
     WHERE email = ?
@@ -147,13 +164,13 @@ async function createManager(user, payload, executor) {
   return result.insertId;
 }
 
-async function update(id, payload) {
+async function update(id, payload, executor = null) {
   const parsed = parseUserId(id);
   if (!parsed) {
     return 0;
   }
   const { setClause, values } = buildUpdateSet(payload, ['display_name', 'phone', 'is_active']);
-  const result = await query(`UPDATE ${parsed.table} SET ${setClause} WHERE ${parsed.idColumn} = ?`, [...values, parsed.roleId]);
+  const result = await run(executor, `UPDATE ${parsed.table} SET ${setClause} WHERE ${parsed.idColumn} = ?`, [...values, parsed.roleId]);
   return result.affectedRows;
 }
 

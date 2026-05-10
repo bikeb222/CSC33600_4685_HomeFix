@@ -72,22 +72,6 @@ exports.updateStatus = asyncHandler(async (req, res) => {
     if (!allowed[existing.appointment_status]?.includes(nextStatus)) {
       throw new AppError('Provider status transition is not allowed', 403);
     }
-    if (nextStatus === 'accepted') {
-      const conflictRows = await appointmentService.unavailableTimes(existing.provider_id);
-      const currentStart = new Date(existing.scheduled_time).getTime();
-      const currentEnd = currentStart + Number(existing.actual_hours || existing.estimated_hours) * 60 * 60 * 1000;
-      const conflict = conflictRows.find((row) => {
-        if (Number(row.app_id) === Number(existing.app_id)) {
-          return false;
-        }
-        const start = new Date(row.scheduled_time).getTime();
-        const end = new Date(row.blocked_until).getTime();
-        return start < currentEnd && end > currentStart;
-      });
-      if (conflict) {
-        throw new AppError('Provider already has an appointment at this time', 409);
-      }
-    }
   }
   if (req.user.role === 'receiver') {
     const canCancel = ['pending', 'accepted'].includes(existing.appointment_status) && nextStatus === 'cancelled';
@@ -106,6 +90,18 @@ exports.updateActualHours = asyncHandler(async (req, res) => {
     throw new AppError('Only the assigned provider or a manager can update actual service hours', 403);
   }
   const appointment = await appointmentService.updateActualHours(req.params.id, req.body.actual_hours);
+  res.json(appointment);
+});
+
+exports.updatePendingRequest = asyncHandler(async (req, res) => {
+  const existing = await appointmentService.getById(req.params.id);
+  if (!canAccessAppointment(req.user, existing)) {
+    throw new AppError('You do not have permission to update this appointment', 403);
+  }
+  if (!['manager', 'receiver'].includes(req.user.role)) {
+    throw new AppError('Only receivers or managers can adjust pending appointment requests', 403);
+  }
+  const appointment = await appointmentService.updatePendingRequest(req.params.id, req.body);
   res.json(appointment);
 });
 

@@ -9,6 +9,7 @@ async function appointmentsReport() {
       s.service_name AS service,
       a.scheduled_time,
       a.appointment_status AS status,
+      a.tip_amount,
       a.estimated_total
     FROM Appointments a
     JOIN Receivers r ON a.receiver_id = r.receiver_id
@@ -26,7 +27,8 @@ async function paymentsReport() {
       pay.total_amount,
       pay.commission_fee,
       pay.provider_payout,
-      pay.payment_status
+      pay.payment_status,
+      pay.payment_date
     FROM Payments pay
     ORDER BY pay.payment_id DESC
   `);

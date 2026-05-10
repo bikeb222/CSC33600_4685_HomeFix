@@ -1,6 +1,7 @@
 const providerModel = require('../models/providerModel');
 const appointmentModel = require('../models/appointmentModel');
 const authService = require('./authService');
+const { pool } = require('../config/db');
 const AppError = require('../utils/AppError');
 const {
   requireFields,
@@ -72,7 +73,17 @@ async function update(id, payload) {
     throw new AppError('No provider fields were provided for update', 400);
   }
 
-  await providerModel.update(providerId, updatePayload);
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await providerModel.update(providerId, updatePayload, connection);
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
   return providerModel.findById(providerId);
 }
 

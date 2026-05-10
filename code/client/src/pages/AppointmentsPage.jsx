@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { MessageSquarePlus, Trash2 } from 'lucide-react';
+import { CreditCard, MessageSquarePlus, Pencil, Trash2 } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../auth/useAuth';
 import DataTable from '../components/DataTable';
@@ -19,7 +19,14 @@ const emptyForm = {
   service_id: '',
   provider_id: '',
   scheduled_time: '',
-  estimated_hours: '1'
+  estimated_hours: '1',
+  tip_amount: '0'
+};
+
+const emptyAdjustForm = {
+  scheduled_time: '',
+  estimated_hours: '',
+  tip_amount: '0'
 };
 
 function statusOptionsFor(user, row) {
@@ -48,35 +55,11 @@ function canChangeStatus(user, row) {
   return statusOptionsFor(user, row).length > 1;
 }
 
-function toDateTimeLocal(date) {
-  const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return offsetDate.toISOString().slice(0, 16);
-}
-
-function buildAvailableTimeSlots() {
-  const slots = [];
-  const hours = [9, 11, 14, 16];
-  const now = new Date();
-
-  for (let dayOffset = 1; dayOffset <= 5; dayOffset += 1) {
-    for (const hour of hours) {
-      const slot = new Date(now);
-      slot.setDate(now.getDate() + dayOffset);
-      slot.setHours(hour, 0, 0, 0);
-      slots.push({
-        value: toDateTimeLocal(slot),
-        label: new Intl.DateTimeFormat('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit'
-        }).format(slot)
-      });
-    }
+function toInputDateTime(value) {
+  if (!value) {
+    return '';
   }
-
-  return slots.slice(0, 8);
+  return String(value).replace(' ', 'T').slice(0, 16);
 }
 
 function scheduleSurchargeFor(scheduledTime, estimatedHours) {
@@ -113,6 +96,7 @@ export default function AppointmentsPage() {
   const canCreateAppointment = user.role === 'manager' || user.role === 'receiver';
   const [appointments, setAppointments] = React.useState([]);
   const [reviews, setReviews] = React.useState([]);
+  const [payments, setPayments] = React.useState([]);
   const [receivers, setReceivers] = React.useState([]);
   const [services, setServices] = React.useState([]);
   const [providers, setProviders] = React.useState([]);
@@ -123,33 +107,43 @@ export default function AppointmentsPage() {
   const [statusFilter, setStatusFilter] = React.useState('');
   const [sortDirection, setSortDirection] = React.useState('desc');
   const [modalOpen, setModalOpen] = React.useState(false);
+  const [adjustTarget, setAdjustTarget] = React.useState(null);
+  const [adjustForm, setAdjustForm] = React.useState(emptyAdjustForm);
   const [deleteTarget, setDeleteTarget] = React.useState(null);
+  const [payTarget, setPayTarget] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [formLoading, setFormLoading] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
   const [timeConfirmed, setTimeConfirmed] = React.useState(false);
   const [error, setError] = React.useState('');
   const [notice, setNotice] = React.useState('');
+  const [noticeTone, setNoticeTone] = React.useState('success');
 
   const selectedProvider = providers.find((provider) => String(provider.provider_id) === String(form.provider_id));
   const selectedService = services.find((service) => String(service.service_id) === String(form.service_id));
   const baseRate = Number(selectedProvider?.base_hourly_rate || selectedService?.base_hourly_rate || 0);
   const scheduleSurcharge = scheduleSurchargeFor(form.scheduled_time, form.estimated_hours);
   const finalHourlyRate = baseRate * (1 + scheduleSurcharge.rate);
-  const estimatedTotal = finalHourlyRate * Number(form.estimated_hours || 0);
-  const availableTimeSlots = React.useMemo(() => buildAvailableTimeSlots(), []);
+  const tipAmount = Number(form.tip_amount || 0);
+  const estimatedTotal = (finalHourlyRate * Number(form.estimated_hours || 0)) + tipAmount;
+  const providerTimeGroups = React.useMemo(() => ({
+    pending: unavailableTimes.filter((time) => time.block_type === 'pending'),
+    accepted: unavailableTimes.filter((time) => ['accepted', 'in_progress'].includes(time.block_type)),
+    manual: unavailableTimes.filter((time) => time.block_type === 'manual')
+  }), [unavailableTimes]);
 
   async function load() {
     try {
       setLoading(true);
       setError('');
-      const requests = [api.appointments.list(), api.reviews.list()];
+      const requests = [api.appointments.list(), api.reviews.list(), api.payments.list()];
       if (user.role === 'manager') {
         requests.push(api.receivers.list());
       }
-      const [appointmentRows, reviewRows, receiverRows = []] = await Promise.all(requests);
+      const [appointmentRows, reviewRows, paymentRows, receiverRows = []] = await Promise.all(requests);
       setAppointments(appointmentRows);
       setReviews(reviewRows);
+      setPayments(paymentRows);
       setReceivers(receiverRows);
     } catch (err) {
       setError(err.message);
@@ -284,10 +278,24 @@ export default function AppointmentsPage() {
     setModalOpen(false);
     setForm(emptyForm);
     setTimeConfirmed(false);
-    setAddresses([]);
-    setServices([]);
-    setProviders([]);
-    setUnavailableTimes([]);
+      setAddresses([]);
+      setServices([]);
+      setProviders([]);
+      setUnavailableTimes([]);
+  }
+
+  function openAdjustModal(row) {
+    setAdjustTarget(row);
+    setAdjustForm({
+      scheduled_time: toInputDateTime(row.scheduled_time),
+      estimated_hours: String(row.estimated_hours || '1'),
+      tip_amount: String(row.tip_amount || 0)
+    });
+  }
+
+  function closeAdjustModal() {
+    setAdjustTarget(null);
+    setAdjustForm(emptyAdjustForm);
   }
 
   async function submit(event) {
@@ -310,11 +318,16 @@ export default function AppointmentsPage() {
       setSubmitting(true);
       setError('');
       setNotice('');
-      await api.appointments.create({
+      setNoticeTone('success');
+      const created = await api.appointments.create({
         ...form,
-        receiver_id: receiverId
+        receiver_id: receiverId,
+        tip_amount: Number(form.tip_amount || 0)
       });
-      setNotice('Appointment created successfully.');
+      setNotice(created.pending_queue_ahead > 0
+        ? `Appointment created as pending. ${created.pending_queue_ahead} pending request${created.pending_queue_ahead === 1 ? '' : 's'} for this provider already overlap this time.`
+        : 'Appointment created successfully.');
+      setNoticeTone(created.pending_queue_ahead > 0 ? 'warning' : 'success');
       closeModal();
       await load();
     } catch (err) {
@@ -344,6 +357,53 @@ export default function AppointmentsPage() {
       await load();
     } catch (err) {
       setError(err.message);
+    }
+  }
+
+  async function submitAdjust(event) {
+    event.preventDefault();
+    if (!adjustTarget) {
+      return;
+    }
+    try {
+      setSubmitting(true);
+      setError('');
+      setNotice('');
+      setNoticeTone('success');
+      const updated = await api.appointments.updateRequest(adjustTarget.app_id, adjustForm);
+      setNotice(updated.pending_queue_ahead > 0
+        ? `${updated.pending_queue_ahead} pending request${updated.pending_queue_ahead === 1 ? '' : 's'} for this provider already overlap this time.`
+        : 'Appointment request updated.');
+      setNoticeTone(updated.pending_queue_ahead > 0 ? 'warning' : 'success');
+      closeAdjustModal();
+      await load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function submitPayment() {
+    if (!payTarget) {
+      return;
+    }
+    try {
+      setSubmitting(true);
+      setError('');
+      setNotice('');
+      await api.payments.create({
+        app_id: payTarget.app_id,
+        payment_status: 'paid'
+      });
+      setNotice('Payment completed successfully.');
+      setNoticeTone('success');
+      setPayTarget(null);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -392,17 +452,45 @@ export default function AppointmentsPage() {
     ));
   }
 
+  function hasPendingOverlap(row) {
+    return row.appointment_status === 'pending' && Number(row.pending_overlap_count || 0) > 0;
+  }
+
+  function canAdjustAppointment(row) {
+    return ['manager', 'receiver'].includes(user.role) && row.appointment_status === 'pending';
+  }
+
+  function canPayAppointment(row) {
+    return user.role === 'receiver'
+      && row.appointment_status === 'completed'
+      && !payments.some((payment) => Number(payment.app_id) === Number(row.app_id));
+  }
+
   const columns = [
     { key: 'app_id', label: 'ID' },
     ...(user.role !== 'receiver' ? [{ key: 'receiver_name', label: 'Receiver' }] : []),
     ...(user.role !== 'provider' ? [{ key: 'provider_name', label: 'Provider' }] : []),
     { key: 'service_name', label: 'Service' },
     { key: 'address_label', label: 'Address' },
-    { key: 'appointment_status', label: 'Status', render: (row) => <StatusBadge value={row.appointment_status} /> },
+    {
+      key: 'appointment_status',
+      label: 'Status',
+      render: (row) => (
+        <div className="status-stack">
+          <StatusBadge value={row.appointment_status} />
+          {hasPendingOverlap(row) && (
+            <small className="queue-warning">
+              {row.pending_overlap_count} overlapping pending request{Number(row.pending_overlap_count) === 1 ? '' : 's'}
+            </small>
+          )}
+        </div>
+      )
+    },
     { key: 'scheduled_time', label: 'Scheduled', render: (row) => shortDateTime(row.scheduled_time) },
     { key: 'hourly_rate_at_booking', label: 'Rate', render: (row) => currency(row.hourly_rate_at_booking) },
     { key: 'schedule_surcharge_rate', label: 'Surcharge', render: (row) => Number(row.schedule_surcharge_rate || 0) ? `${Math.round(Number(row.schedule_surcharge_rate) * 100)}%` : 'None' },
     { key: 'estimated_hours', label: 'Hours' },
+    { key: 'tip_amount', label: 'Tip', render: (row) => currency(row.tip_amount || 0) },
     { key: 'actual_hours', label: 'Actual', render: (row) => row.actual_hours || 'Not set' },
     { key: 'actual_total', label: 'Final', render: (row) => currency(row.actual_total || row.estimated_total) }
   ];
@@ -418,7 +506,7 @@ export default function AppointmentsPage() {
       />
 
       <ErrorAlert message={error} onClose={() => setError('')} />
-      {notice && <div className="alert success">{notice}</div>}
+      {notice && <div className={`alert ${noticeTone}`}>{notice}</div>}
 
       <SearchAndFilterBar
         search={search}
@@ -446,7 +534,9 @@ export default function AppointmentsPage() {
         rows={filteredAppointments}
         rowKey="app_id"
         loading={loading}
+        className="appointments-table"
         columns={columns}
+        rowClassName={(row) => (hasPendingOverlap(row) ? 'pending-overlap-row' : '')}
         actions={(row) => (
           <>
             <select
@@ -474,10 +564,22 @@ export default function AppointmentsPage() {
                 onBlur={(event) => updateActualHours(row.app_id, event.target.value)}
               />
             )}
+            {canAdjustAppointment(row) && (
+              <button className="button mini" type="button" onClick={() => openAdjustModal(row)}>
+                <Pencil size={14} />
+                Adjust
+              </button>
+            )}
             {canRateAppointment(row) && (
               <button className="button mini" type="button" onClick={() => navigate(`/reviews?new=${row.app_id}`)}>
                 <MessageSquarePlus size={14} />
                 Rate
+              </button>
+            )}
+            {canPayAppointment(row) && (
+              <button className="button mini primary-mini" type="button" onClick={() => setPayTarget(row)}>
+                <CreditCard size={14} />
+                Pay
               </button>
             )}
           </>
@@ -569,42 +671,37 @@ export default function AppointmentsPage() {
               Estimated Hours
               <input type="number" min="0.25" step="0.25" value={form.estimated_hours} onChange={(event) => setForm((current) => ({ ...current, estimated_hours: event.target.value }))} required />
             </label>
+            <label>
+              Tip
+              <input type="number" min="0" step="1" value={form.tip_amount} onChange={(event) => setForm((current) => ({ ...current, tip_amount: event.target.value }))} />
+            </label>
           </div>
-          <div className="available-times">
-            <span>Available times</span>
+          <div className="provider-time-panel">
             <div>
-              {availableTimeSlots.map((slot) => (
-                <button
-                  key={slot.value}
-                  className={`time-slot ${form.scheduled_time === slot.value ? 'selected' : ''}`}
-                  type="button"
-                  onClick={() => {
-                    setTimeConfirmed(false);
-                    setForm((current) => ({ ...current, scheduled_time: slot.value }));
-                  }}
-                  onDoubleClick={() => {
-                    setForm((current) => ({ ...current, scheduled_time: slot.value }));
-                    setTimeConfirmed(true);
-                  }}
-                  title="Double-click to confirm this time"
-                >
-                  {slot.label}
-                </button>
-              ))}
+              <span>Pending requests for this provider</span>
+              {providerTimeGroups.pending.length ? providerTimeGroups.pending.map((time) => (
+                <code className="pending-time" key={time.block_key || `pending-${time.app_id}`}>
+                  #{time.app_id} {shortDateTime(time.start_time)} - {shortDateTime(time.end_time)}
+                </code>
+              )) : <small>No pending requests.</small>}
+            </div>
+            <div>
+              <span>Accepted unavailable times</span>
+              {providerTimeGroups.accepted.length ? providerTimeGroups.accepted.map((time) => (
+                <code key={time.block_key || `accepted-${time.app_id}`}>
+                  #{time.app_id} {shortDateTime(time.start_time)} - {shortDateTime(time.end_time)}
+                </code>
+              )) : <small>No accepted appointments blocking this provider.</small>}
+            </div>
+            <div>
+              <span>Provider time off</span>
+              {providerTimeGroups.manual.length ? providerTimeGroups.manual.map((time) => (
+                <code key={time.block_key || `manual-${time.block_id}`}>
+                  {shortDateTime(time.start_time)} - {shortDateTime(time.end_time)}{time.reason ? ` (${time.reason})` : ''}
+                </code>
+              )) : <small>No manual unavailable blocks.</small>}
             </div>
           </div>
-          {unavailableTimes.length > 0 && (
-            <div className="unavailable-times">
-              <span>Provider unavailable times</span>
-              <div>
-                {unavailableTimes.map((time) => (
-                  <code key={time.block_key || `${time.block_type}-${time.app_id || time.block_id}`}>
-                    {time.block_type === 'manual' ? 'Unavailable' : `#${time.app_id}`} {shortDateTime(time.scheduled_time)} - {shortDateTime(time.blocked_until)}
-                  </code>
-                ))}
-              </div>
-            </div>
-          )}
           <div className="summary-strip">
             <span>Working hours</span>
             <strong>Mon-Fri, 8:00 AM - 5:00 PM</strong>
@@ -624,6 +721,10 @@ export default function AppointmentsPage() {
               <strong>{currency(finalHourlyRate)}</strong>
             </div>
             <div>
+              <span>Tip</span>
+              <strong>{currency(tipAmount)}</strong>
+            </div>
+            <div>
               <span>Estimated total</span>
               <strong>{currency(estimatedTotal)}</strong>
             </div>
@@ -635,6 +736,88 @@ export default function AppointmentsPage() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={Boolean(adjustTarget)}
+        title="Adjust Pending Request"
+        description="Change the requested time or add a tip before the provider accepts it."
+        onClose={closeAdjustModal}
+        size="md"
+      >
+        <form onSubmit={submitAdjust} className="form-grid">
+          <label>
+            Scheduled Time
+            <input
+              type="datetime-local"
+              value={adjustForm.scheduled_time}
+              onChange={(event) => setAdjustForm((current) => ({ ...current, scheduled_time: event.target.value }))}
+              required
+            />
+          </label>
+          <label>
+            Estimated Hours
+            <input
+              type="number"
+              min="0.25"
+              step="0.25"
+              value={adjustForm.estimated_hours}
+              onChange={(event) => setAdjustForm((current) => ({ ...current, estimated_hours: event.target.value }))}
+              required
+            />
+          </label>
+          <label>
+            Tip
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={adjustForm.tip_amount}
+              onChange={(event) => setAdjustForm((current) => ({ ...current, tip_amount: event.target.value }))}
+            />
+          </label>
+          <div className="form-actions end">
+            <button className="button ghost" type="button" onClick={closeAdjustModal}>Cancel</button>
+            <button className="button primary" type="submit" disabled={submitting}>
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={Boolean(payTarget)}
+        title="Pay Appointment"
+        description="Payment uses the completed appointment final total, including actual hours and any tip."
+        onClose={() => setPayTarget(null)}
+        size="md"
+      >
+        <div className="form-grid">
+          <div className="booking-summary">
+            <div>
+              <span>Appointment</span>
+              <strong>#{payTarget?.app_id}</strong>
+            </div>
+            <div>
+              <span>Final total</span>
+              <strong>{currency(payTarget?.actual_total || payTarget?.estimated_total || 0)}</strong>
+            </div>
+            <div>
+              <span>Actual hours</span>
+              <strong>{payTarget?.actual_hours || 'Not set'}</strong>
+            </div>
+            <div>
+              <span>Tip</span>
+              <strong>{currency(payTarget?.tip_amount || 0)}</strong>
+            </div>
+          </div>
+          <div className="form-actions end">
+            <button className="button ghost" type="button" onClick={() => setPayTarget(null)}>Cancel</button>
+            <button className="button primary" type="button" onClick={submitPayment} disabled={submitting}>
+              {submitting ? 'Paying...' : 'Pay Now'}
+            </button>
+          </div>
+        </div>
       </Modal>
 
       <ConfirmDialog

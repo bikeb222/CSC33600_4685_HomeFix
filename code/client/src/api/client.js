@@ -121,6 +121,7 @@ export const api = {
     create: (body) => request('/appointments', { method: 'POST', body }),
     updateStatus: (id, appointment_status) => request(`/appointments/${id}/status`, { method: 'PUT', body: { appointment_status } }),
     updateActualHours: (id, actual_hours) => request(`/appointments/${id}/actual-hours`, { method: 'PUT', body: { actual_hours } }),
+    updateRequest: (id, body) => request(`/appointments/${id}/request`, { method: 'PUT', body }),
     remove: (id) => request(`/appointments/${id}`, { method: 'DELETE' })
   },
   payments: {
