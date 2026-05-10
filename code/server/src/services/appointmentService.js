@@ -10,6 +10,8 @@ const {
   assertStatus
 } = require('../utils/validators');
 
+const DEFAULT_PLATFORM_FEE_RATE = 0.15;
+
 function normalizeDateTime(value) {
   if (!value) {
     throw new AppError('scheduled_time is required', 400);
@@ -53,10 +55,6 @@ function calculateScheduleSurcharge(scheduledTime, estimatedHours) {
     rate,
     reason: reasons.length ? reasons.join('_') : 'standard_hours'
   };
-}
-
-function applySurcharge(baseRate, surchargeRate) {
-  return Math.round(Number(baseRate) * (1 + Number(surchargeRate)) * 100) / 100;
 }
 
 async function list(filters = {}) {
@@ -126,7 +124,8 @@ async function create(payload) {
       service_id: serviceId,
       address_id: addressId,
       scheduled_time: scheduledTime,
-      hourly_rate_at_booking: applySurcharge(providerService.base_hourly_rate, surcharge.rate),
+      provider_base_hourly_rate_at_booking: providerService.base_hourly_rate,
+      platform_fee_rate: DEFAULT_PLATFORM_FEE_RATE,
       schedule_surcharge_rate: surcharge.rate,
       schedule_surcharge_reason: surcharge.reason,
       estimated_hours: estimatedHours,
@@ -207,7 +206,8 @@ async function updatePendingRequest(id, payload) {
     const surcharge = calculateScheduleSurcharge(scheduledTime, estimatedHours);
     await appointmentModel.updatePendingRequest(appointmentId, {
       scheduled_time: scheduledTime,
-      hourly_rate_at_booking: applySurcharge(providerService.base_hourly_rate, surcharge.rate),
+      provider_base_hourly_rate_at_booking: providerService.base_hourly_rate,
+      platform_fee_rate: Number(appointment.platform_fee_rate || DEFAULT_PLATFORM_FEE_RATE),
       schedule_surcharge_rate: surcharge.rate,
       schedule_surcharge_reason: surcharge.reason,
       estimated_hours: estimatedHours,

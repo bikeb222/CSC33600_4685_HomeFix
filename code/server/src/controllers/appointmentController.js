@@ -8,6 +8,21 @@ function canAccessAppointment(user, appointment) {
     || (user.role === 'receiver' && Number(user.receiver_id) === Number(appointment.receiver_id));
 }
 
+function shapeAppointmentForUser(user, appointment) {
+  const shaped = { ...appointment };
+  if (user.role === 'provider') {
+    delete shaped.receiver_base_hourly_rate_at_booking;
+    delete shaped.estimated_total;
+    delete shaped.actual_total;
+  }
+  if (user.role === 'receiver') {
+    delete shaped.provider_base_hourly_rate_at_booking;
+    delete shaped.provider_estimated_payout;
+    delete shaped.provider_actual_payout;
+  }
+  return shaped;
+}
+
 exports.create = asyncHandler(async (req, res) => {
   if (!['manager', 'receiver'].includes(req.user.role)) {
     throw new AppError('Only managers and receivers can create appointments', 403);
@@ -17,7 +32,7 @@ exports.create = asyncHandler(async (req, res) => {
     body.receiver_id = req.user.receiver_id;
   }
   const appointment = await appointmentService.create(body);
-  res.status(201).json(appointment);
+  res.status(201).json(shapeAppointmentForUser(req.user, appointment));
 });
 
 exports.list = asyncHandler(async (req, res) => {
@@ -31,7 +46,7 @@ exports.list = asyncHandler(async (req, res) => {
   const appointments = await appointmentService.list({
     ...filters
   });
-  res.json(appointments);
+  res.json(appointments.map((appointment) => shapeAppointmentForUser(req.user, appointment)));
 });
 
 exports.getById = asyncHandler(async (req, res) => {
@@ -39,7 +54,7 @@ exports.getById = asyncHandler(async (req, res) => {
   if (!canAccessAppointment(req.user, appointment)) {
     throw new AppError('You do not have permission to access this appointment', 403);
   }
-  res.json(appointment);
+  res.json(shapeAppointmentForUser(req.user, appointment));
 });
 
 exports.listForReceiver = asyncHandler(async (req, res) => {
@@ -47,7 +62,7 @@ exports.listForReceiver = asyncHandler(async (req, res) => {
     throw new AppError('You do not have permission to access these appointments', 403);
   }
   const appointments = await appointmentService.list({ receiverId: req.params.receiverId });
-  res.json(appointments);
+  res.json(appointments.map((appointment) => shapeAppointmentForUser(req.user, appointment)));
 });
 
 exports.listForProvider = asyncHandler(async (req, res) => {
@@ -55,7 +70,7 @@ exports.listForProvider = asyncHandler(async (req, res) => {
     throw new AppError('You do not have permission to access these appointments', 403);
   }
   const appointments = await appointmentService.list({ providerId: req.params.providerId });
-  res.json(appointments);
+  res.json(appointments.map((appointment) => shapeAppointmentForUser(req.user, appointment)));
 });
 
 exports.updateStatus = asyncHandler(async (req, res) => {
@@ -75,13 +90,13 @@ exports.updateStatus = asyncHandler(async (req, res) => {
   }
   if (req.user.role === 'receiver') {
     const canCancel = ['pending', 'accepted'].includes(existing.appointment_status) && nextStatus === 'cancelled';
-    const canConfirmComplete = ['accepted', 'in_progress'].includes(existing.appointment_status) && nextStatus === 'completed';
+    const canConfirmComplete = existing.appointment_status === 'in_progress' && nextStatus === 'completed';
     if (!canCancel && !canConfirmComplete) {
-      throw new AppError('Receivers can cancel pending or accepted appointments, or confirm accepted/in-progress appointments as completed', 403);
+      throw new AppError('Receivers can cancel pending or accepted appointments, or confirm in-progress appointments as completed', 403);
     }
   }
   const appointment = await appointmentService.updateStatus(req.params.id, req.body.appointment_status);
-  res.json(appointment);
+  res.json(shapeAppointmentForUser(req.user, appointment));
 });
 
 exports.updateActualHours = asyncHandler(async (req, res) => {
@@ -90,7 +105,7 @@ exports.updateActualHours = asyncHandler(async (req, res) => {
     throw new AppError('Only the assigned provider or a manager can update actual service hours', 403);
   }
   const appointment = await appointmentService.updateActualHours(req.params.id, req.body.actual_hours);
-  res.json(appointment);
+  res.json(shapeAppointmentForUser(req.user, appointment));
 });
 
 exports.updatePendingRequest = asyncHandler(async (req, res) => {
@@ -102,7 +117,7 @@ exports.updatePendingRequest = asyncHandler(async (req, res) => {
     throw new AppError('Only receivers or managers can adjust pending appointment requests', 403);
   }
   const appointment = await appointmentService.updatePendingRequest(req.params.id, req.body);
-  res.json(appointment);
+  res.json(shapeAppointmentForUser(req.user, appointment));
 });
 
 exports.providerUnavailableTimes = asyncHandler(async (req, res) => {

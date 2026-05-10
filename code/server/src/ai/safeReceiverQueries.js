@@ -8,7 +8,7 @@ async function getReceiverNextAppointment(receiverId) {
       a.scheduled_time,
       a.estimated_hours,
       a.actual_hours,
-      a.hourly_rate_at_booking,
+      a.receiver_base_hourly_rate_at_booking,
       a.estimated_total,
       a.actual_total,
       s.service_name,
@@ -69,8 +69,6 @@ async function getReceiverPayments(receiverId) {
       pay.payment_id,
       pay.app_id,
       pay.total_amount,
-      pay.commission_fee,
-      pay.provider_payout,
       pay.payment_status,
       pay.payment_date,
       s.service_name,
@@ -168,9 +166,9 @@ async function getAvailableServices() {
       s.service_name,
       s.description,
       COUNT(ps.provider_id) AS active_provider_count,
-      COALESCE(MIN(ps.base_hourly_rate), 0) AS min_hourly_rate,
-      COALESCE(MAX(ps.base_hourly_rate), 0) AS max_hourly_rate,
-      COALESCE(ROUND(AVG(ps.base_hourly_rate), 2), 0) AS average_hourly_rate
+      COALESCE(ROUND(MIN(ps.base_hourly_rate) * 1.15, 2), 0) AS min_hourly_rate,
+      COALESCE(ROUND(MAX(ps.base_hourly_rate) * 1.15, 2), 0) AS max_hourly_rate,
+      COALESCE(ROUND(AVG(ps.base_hourly_rate) * 1.15, 2), 0) AS average_hourly_rate
     FROM Services s
     LEFT JOIN Provider_Services ps ON s.service_id = ps.service_id AND ps.approval_status = 'approved'
     LEFT JOIN Providers p ON ps.provider_id = p.provider_id AND p.provider_status = 'active'
@@ -186,9 +184,9 @@ async function getServiceRateSummary() {
     SELECT
       s.service_name,
       COUNT(ps.provider_id) AS active_provider_count,
-      MIN(ps.base_hourly_rate) AS min_hourly_rate,
-      MAX(ps.base_hourly_rate) AS max_hourly_rate,
-      ROUND(AVG(ps.base_hourly_rate), 2) AS average_hourly_rate
+      ROUND(MIN(ps.base_hourly_rate) * 1.15, 2) AS min_hourly_rate,
+      ROUND(MAX(ps.base_hourly_rate) * 1.15, 2) AS max_hourly_rate,
+      ROUND(AVG(ps.base_hourly_rate) * 1.15, 2) AS average_hourly_rate
     FROM Services s
     JOIN Provider_Services ps ON s.service_id = ps.service_id
     JOIN Providers p ON ps.provider_id = p.provider_id
@@ -199,9 +197,9 @@ async function getServiceRateSummary() {
   `);
   const overallRows = await query(`
     SELECT
-      MIN(ps.base_hourly_rate) AS overall_min_hourly_rate,
-      MAX(ps.base_hourly_rate) AS overall_max_hourly_rate,
-      ROUND(AVG(ps.base_hourly_rate), 2) AS overall_average_hourly_rate
+      ROUND(MIN(ps.base_hourly_rate) * 1.15, 2) AS overall_min_hourly_rate,
+      ROUND(MAX(ps.base_hourly_rate) * 1.15, 2) AS overall_max_hourly_rate,
+      ROUND(AVG(ps.base_hourly_rate) * 1.15, 2) AS overall_average_hourly_rate
     FROM Provider_Services ps
     JOIN Providers p ON ps.provider_id = p.provider_id
     WHERE ps.approval_status = 'approved'
@@ -215,7 +213,7 @@ async function getServiceRateSummary() {
       { condition: 'Weekend booking', surcharge_rate: '10%' },
       { condition: 'Weekend and outside standard hours', surcharge_rate: '30%' }
     ],
-    note: 'Rates are base hourly rates from approved active provider-service links. Appointment totals also depend on estimated or actual hours and schedule surcharges.'
+    note: 'Rates are receiver-visible base hourly rates, including the platform fee. Appointment totals also depend on estimated or actual hours and schedule surcharges.'
   };
 }
 
@@ -232,7 +230,7 @@ async function getProvidersForService(messageOrName) {
       p.display_name AS provider_name,
       p.provider_status,
       s.service_name,
-      ps.base_hourly_rate,
+      ROUND(ps.base_hourly_rate * 1.15, 2) AS base_hourly_rate,
       COALESCE(ROUND(AVG(CASE WHEN rev.review_direction = 'receiver_to_provider' THEN rev.rating END), 2), 0) AS average_rating
     FROM Provider_Services ps
     JOIN Providers p ON ps.provider_id = p.provider_id
@@ -330,7 +328,7 @@ async function getProviderPublicDetails(providerId) {
 
 async function getProviderServices(providerId) {
   return query(`
-    SELECT s.service_name, ps.base_hourly_rate
+    SELECT s.service_name, ROUND(ps.base_hourly_rate * 1.15, 2) AS base_hourly_rate
     FROM Provider_Services ps
     JOIN Services s ON ps.service_id = s.service_id
     WHERE ps.provider_id = ? AND ps.approval_status = 'approved'

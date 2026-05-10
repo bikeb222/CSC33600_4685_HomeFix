@@ -41,7 +41,26 @@ export default function PaymentsPage() {
     && !payments.some((payment) => Number(payment.app_id) === Number(appointment.app_id))
   ));
   const baseAmount = Number(form.total_amount || selectedAppointment?.actual_total || selectedAppointment?.estimated_total || 0);
+  const providerPayoutAmount = Number(selectedAppointment?.provider_actual_payout || selectedAppointment?.provider_estimated_payout || 0);
+  const platformFeeAmount = Math.max(baseAmount - providerPayoutAmount, 0);
   const commissionRate = Number(form.commission_rate || 0);
+  const paymentColumns = [
+    { key: 'payment_id', label: 'ID' },
+    { key: 'app_id', label: 'Appointment' },
+    ...(user.role !== 'receiver' ? [{ key: 'receiver_name', label: 'Receiver' }] : []),
+    ...(user.role !== 'provider' ? [{ key: 'provider_name', label: 'Provider' }] : []),
+    ...(user.role === 'provider'
+      ? [{ key: 'provider_payout', label: 'Payout', render: (row) => currency(row.provider_payout) }]
+      : [{ key: 'total_amount', label: 'Total', render: (row) => currency(row.total_amount) }]),
+    { key: 'actual_hours', label: 'Actual Hours', render: (row) => row.actual_hours || 'Not set' },
+    ...(user.role === 'manager' ? [
+      { key: 'commission_rate', label: 'Rate', render: (row) => `${Math.round(Number(row.commission_rate) * 100)}%` },
+      { key: 'commission_fee', label: 'Commission', render: (row) => currency(row.commission_fee) },
+      { key: 'provider_payout', label: 'Payout', render: (row) => currency(row.provider_payout) }
+    ] : []),
+    { key: 'payment_status', label: 'Status', render: (row) => <StatusBadge value={row.payment_status} /> },
+    { key: 'payment_date', label: 'Paid At', render: (row) => row.payment_date ? shortDateTime(row.payment_date) : 'Not paid' }
+  ];
 
   async function load() {
     try {
@@ -230,19 +249,7 @@ export default function PaymentsPage() {
         rows={filteredPayments}
         rowKey="payment_id"
         loading={loading}
-        columns={[
-          { key: 'payment_id', label: 'ID' },
-          { key: 'app_id', label: 'Appointment' },
-          { key: 'receiver_name', label: 'Receiver' },
-          { key: 'provider_name', label: 'Provider' },
-          { key: 'total_amount', label: 'Total', render: (row) => currency(row.total_amount) },
-          { key: 'actual_hours', label: 'Actual Hours', render: (row) => row.actual_hours || 'Not set' },
-          { key: 'commission_rate', label: 'Rate', render: (row) => `${Math.round(Number(row.commission_rate) * 100)}%` },
-          { key: 'commission_fee', label: 'Commission', render: (row) => currency(row.commission_fee) },
-          { key: 'provider_payout', label: 'Payout', render: (row) => currency(row.provider_payout) },
-          { key: 'payment_status', label: 'Status', render: (row) => <StatusBadge value={row.payment_status} /> },
-          { key: 'payment_date', label: 'Paid At', render: (row) => row.payment_date ? shortDateTime(row.payment_date) : 'Not paid' }
-        ]}
+        columns={paymentColumns}
         actions={user.role === 'manager' ? (row) => (
           <select className="small-select" value={row.payment_status} onChange={(event) => updateStatus(row.payment_id, event.target.value)} aria-label="Payment status">
             {paymentStatuses.map((status) => <option key={status} value={status}>{status}</option>)}
@@ -298,13 +305,25 @@ export default function PaymentsPage() {
           )}
           <div className="booking-summary">
             <div>
-              <span>Commission fee</span>
-              <strong>{currency(baseAmount * commissionRate)}</strong>
+              <span>Receiver total</span>
+              <strong>{currency(baseAmount)}</strong>
             </div>
-            <div>
-              <span>Provider payout</span>
-              <strong>{currency(baseAmount * (1 - commissionRate))}</strong>
-            </div>
+            {user.role === 'manager' && (
+              <>
+                <div>
+                  <span>Platform fee</span>
+                  <strong>{currency(platformFeeAmount)}</strong>
+                </div>
+                <div>
+                  <span>Provider payout</span>
+                  <strong>{currency(providerPayoutAmount)}</strong>
+                </div>
+                <div>
+                  <span>Stored fee rate</span>
+                  <strong>{Math.round(commissionRate * 100)}%</strong>
+                </div>
+              </>
+            )}
           </div>
           <div className="form-actions end">
             <button className="button ghost" type="button" onClick={() => setModalOpen(false)}>Cancel</button>

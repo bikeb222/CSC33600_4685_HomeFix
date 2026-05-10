@@ -123,22 +123,22 @@ INSERT INTO Addresses (receiver_id, street, city, state, zip_code, is_default) V
 
 INSERT INTO Appointments (
     receiver_id, provider_id, service_id, address_id, appointment_status,
-    scheduled_time, hourly_rate_at_booking, schedule_surcharge_rate, schedule_surcharge_reason, estimated_hours, actual_hours
+    scheduled_time, provider_base_hourly_rate_at_booking, schedule_surcharge_rate, schedule_surcharge_reason, estimated_hours, actual_hours
 ) VALUES
 (1, 1, 1, 1, 'completed', '2026-05-02 09:00:00', 68.00, 0.0000, 'standard_hours', 2.00, 2.00),
 (1, 4, 4, 2, 'pending', '2026-05-08 13:00:00', 58.00, 0.0000, 'standard_hours', 4.00, NULL),
 (2, 2, 2, 3, 'accepted', '2026-05-06 11:30:00', 82.00, 0.0000, 'standard_hours', 1.50, NULL),
 (2, 1, 4, 4, 'completed', '2026-04-28 10:00:00', 52.00, 0.0000, 'standard_hours', 3.00, 3.00),
 (3, 3, 3, 5, 'completed', '2026-04-29 14:00:00', 45.00, 0.0000, 'standard_hours', 2.50, 2.50),
-(3, 5, 5, 6, 'in_progress', '2026-05-03 15:00:00', 60.50, 0.1000, 'weekend', 2.00, NULL),
+(3, 5, 5, 6, 'in_progress', '2026-05-03 15:00:00', 55.00, 0.1000, 'weekend', 2.00, NULL),
 (4, 2, 1, 7, 'cancelled', '2026-05-01 08:00:00', 75.00, 0.0000, 'standard_hours', 1.00, NULL),
 (4, 4, 3, 8, 'pending', '2026-05-11 12:00:00', 48.00, 0.0000, 'standard_hours', 3.50, NULL),
-(5, 5, 5, 9, 'completed', '2026-04-25 09:30:00', 60.50, 0.1000, 'weekend', 2.25, 2.25),
-(5, 4, 3, 10, 'accepted', '2026-05-09 16:00:00', 62.40, 0.3000, 'weekend_after_hours', 2.00, NULL);
+(5, 5, 5, 9, 'completed', '2026-04-25 09:30:00', 55.00, 0.1000, 'weekend', 2.25, 2.25),
+(5, 4, 3, 10, 'accepted', '2026-05-09 16:00:00', 48.00, 0.3000, 'weekend_after_hours', 2.00, NULL);
 
 INSERT INTO Appointments (
     receiver_id, provider_id, service_id, address_id, appointment_status,
-    scheduled_time, hourly_rate_at_booking, schedule_surcharge_rate, schedule_surcharge_reason, estimated_hours, actual_hours
+    scheduled_time, provider_base_hourly_rate_at_booking, schedule_surcharge_rate, schedule_surcharge_reason, estimated_hours, actual_hours
 ) VALUES
 (6, 6, 6, 11, 'completed', '2026-04-22 09:00:00', 95.00, 0.0000, 'standard_hours', 3.00, 2.75),
 (6, 7, 3, 12, 'pending', '2026-05-14 10:00:00', 52.00, 0.0000, 'standard_hours', 2.00, NULL),
@@ -149,33 +149,33 @@ INSERT INTO Appointments (
 (9, 8, 2, 17, 'cancelled', '2026-05-07 09:00:00', 76.00, 0.0000, 'standard_hours', 1.00, NULL),
 (9, 9, 1, 18, 'completed', '2026-04-18 12:00:00', 70.00, 0.0000, 'standard_hours', 2.50, 2.50),
 (10, 10, 5, 19, 'completed', '2026-04-24 14:00:00', 57.00, 0.0000, 'standard_hours', 3.00, 3.00),
-(10, 7, 6, 20, 'rejected', '2026-05-16 10:00:00', 96.80, 0.1000, 'weekend', 2.00, NULL),
+(10, 7, 6, 20, 'rejected', '2026-05-16 10:00:00', 88.00, 0.1000, 'weekend', 2.00, NULL),
 (1, 6, 6, 1, 'pending', '2026-05-18 09:00:00', 95.00, 0.0000, 'standard_hours', 2.00, NULL),
-(2, 8, 7, 3, 'completed', '2026-04-21 17:30:00', 108.00, 0.2000, 'after_hours', 1.50, 1.25),
+(2, 8, 7, 3, 'completed', '2026-04-21 17:30:00', 90.00, 0.2000, 'after_hours', 1.50, 1.25),
 (3, 7, 3, 5, 'completed', '2026-04-20 11:00:00', 52.00, 0.0000, 'standard_hours', 3.50, 3.50),
 (4, 9, 8, 7, 'pending', '2026-05-19 14:00:00', 110.00, 0.0000, 'standard_hours', 1.25, NULL),
-(5, 10, 4, 9, 'completed', '2026-04-26 10:00:00', 66.00, 0.1000, 'weekend', 2.00, 2.00);
+(5, 10, 4, 9, 'completed', '2026-04-26 10:00:00', 60.00, 0.1000, 'weekend', 2.00, 2.00);
 
 INSERT INTO Appointments (
     receiver_id, provider_id, service_id, address_id, appointment_status,
-    scheduled_time, hourly_rate_at_booking, schedule_surcharge_rate, schedule_surcharge_reason, estimated_hours, actual_hours
+    scheduled_time, provider_base_hourly_rate_at_booking, schedule_surcharge_rate, schedule_surcharge_reason, estimated_hours, actual_hours
 ) VALUES
-(1, 1, 1, 21, 'completed', '2026-04-05 09:00:00', 74.80, 0.1000, 'weekend', 2.00, 2.00),
+(1, 1, 1, 21, 'completed', '2026-04-05 09:00:00', 68.00, 0.1000, 'weekend', 2.00, 2.00),
 (6, 1, 4, 11, 'completed', '2026-04-09 10:00:00', 52.00, 0.0000, 'standard_hours', 3.00, 3.00),
-(7, 1, 1, 13, 'completed', '2026-04-12 13:00:00', 74.80, 0.1000, 'weekend', 1.50, 1.50),
-(9, 1, 4, 17, 'completed', '2026-04-15 16:30:00', 62.40, 0.2000, 'after_hours', 2.00, 2.00),
+(7, 1, 1, 13, 'completed', '2026-04-12 13:00:00', 68.00, 0.1000, 'weekend', 1.50, 1.50),
+(9, 1, 4, 17, 'completed', '2026-04-15 16:30:00', 52.00, 0.2000, 'after_hours', 2.00, 2.00),
 (1, 1, 1, 1, 'pending', '2026-05-20 09:00:00', 68.00, 0.0000, 'standard_hours', 1.50, NULL),
 (1, 1, 4, 2, 'accepted', '2026-05-21 14:00:00', 52.00, 0.0000, 'standard_hours', 2.00, NULL),
 (2, 1, 1, 3, 'completed', '2026-04-17 11:00:00', 68.00, 0.0000, 'standard_hours', 1.25, 1.25),
-(4, 1, 4, 7, 'completed', '2026-04-19 10:30:00', 57.20, 0.1000, 'weekend', 2.50, 2.50),
+(4, 1, 4, 7, 'completed', '2026-04-19 10:30:00', 52.00, 0.1000, 'weekend', 2.50, 2.50),
 (8, 1, 1, 15, 'completed', '2026-04-23 08:30:00', 68.00, 0.0000, 'standard_hours', 2.25, 2.25),
-(9, 1, 1, 18, 'cancelled', '2026-05-24 12:00:00', 74.80, 0.1000, 'weekend', 1.00, NULL),
+(9, 1, 1, 18, 'cancelled', '2026-05-24 12:00:00', 68.00, 0.1000, 'weekend', 1.00, NULL),
 (10, 1, 4, 19, 'rejected', '2026-05-25 10:00:00', 52.00, 0.0000, 'standard_hours', 2.00, NULL),
 (1, 1, 1, 21, 'in_progress', '2026-05-26 09:30:00', 68.00, 0.0000, 'standard_hours', 1.00, NULL);
 
 INSERT INTO Appointments (
     receiver_id, provider_id, service_id, address_id, appointment_status,
-    scheduled_time, hourly_rate_at_booking, schedule_surcharge_rate, schedule_surcharge_reason, estimated_hours, actual_hours
+    scheduled_time, provider_base_hourly_rate_at_booking, schedule_surcharge_rate, schedule_surcharge_reason, estimated_hours, actual_hours
 ) VALUES
 (1, 2, 2, 1, 'completed', '2026-05-04 10:00:00', 82.00, 0.0000, 'standard_hours', 1.25, 1.25),
 (1, 3, 3, 2, 'completed', '2026-05-06 09:30:00', 45.00, 0.0000, 'standard_hours', 2.00, 2.00),
@@ -188,46 +188,48 @@ INSERT INTO Appointments (
 
 INSERT INTO Appointments (
     receiver_id, provider_id, service_id, address_id, appointment_status,
-    scheduled_time, hourly_rate_at_booking, schedule_surcharge_rate, schedule_surcharge_reason, estimated_hours, actual_hours
+    scheduled_time, provider_base_hourly_rate_at_booking, schedule_surcharge_rate, schedule_surcharge_reason, estimated_hours, actual_hours
 ) VALUES
-(1, 1, 1, 1, 'completed', '2026-06-05 18:30:00', 81.60, 0.2000, 'after_hours', 1.50, 1.50),
-(1, 1, 4, 2, 'completed', '2026-06-06 10:00:00', 57.20, 0.1000, 'weekend', 2.00, 2.00),
-(1, 1, 1, 21, 'completed', '2026-06-07 18:00:00', 88.40, 0.3000, 'weekend_after_hours', 1.25, 1.25),
-(1, 1, 4, 22, 'completed', '2026-07-02 07:00:00', 62.40, 0.2000, 'after_hours', 2.50, 2.50);
+(1, 1, 1, 1, 'completed', '2026-06-05 18:30:00', 68.00, 0.2000, 'after_hours', 1.50, 1.50),
+(1, 1, 4, 2, 'completed', '2026-06-06 10:00:00', 52.00, 0.1000, 'weekend', 2.00, 2.00),
+(1, 1, 1, 21, 'completed', '2026-06-07 18:00:00', 68.00, 0.3000, 'weekend_after_hours', 1.25, 1.25),
+(1, 1, 4, 22, 'completed', '2026-07-02 07:00:00', 52.00, 0.2000, 'after_hours', 2.50, 2.50);
 
-INSERT INTO Payments (app_id, total_amount, commission_rate, payment_status, payment_date) VALUES
-(1, 136.00, 0.1500, 'paid', '2026-05-02 12:10:00'),
-(4, 156.00, 0.1500, 'paid', '2026-04-28 14:00:00'),
-(5, 112.50, 0.1200, 'paid', '2026-04-29 17:20:00'),
-(9, 136.13, 0.1500, 'paid', '2026-04-25 13:45:00');
-
-INSERT INTO Payments (app_id, total_amount, commission_rate, payment_status, payment_date) VALUES
-(11, 261.25, 0.1500, 'paid', '2026-04-22 13:10:00'),
-(14, 110.00, 0.1500, 'paid', '2026-04-30 17:30:00'),
-(18, 175.00, 0.1200, 'paid', '2026-04-18 15:20:00'),
-(19, 171.00, 0.1500, 'paid', '2026-04-24 17:00:00'),
-(22, 135.00, 0.1500, 'paid', '2026-04-21 20:15:00'),
-(23, 182.00, 0.1200, 'paid', '2026-04-20 15:45:00'),
-(25, 132.00, 0.1500, 'paid', '2026-04-26 13:25:00');
-
-INSERT INTO Payments (app_id, total_amount, commission_rate, payment_status, payment_date) VALUES
-(26, 149.60, 0.1500, 'paid', '2026-04-05 12:30:00'),
-(27, 156.00, 0.1500, 'paid', '2026-04-09 14:10:00'),
-(28, 112.20, 0.1500, 'paid', '2026-04-12 16:00:00'),
-(29, 124.80, 0.1500, 'paid', '2026-04-15 19:00:00'),
-(32, 85.00, 0.1500, 'paid', '2026-04-17 13:15:00'),
-(33, 143.00, 0.1500, 'paid', '2026-04-19 14:00:00'),
-(34, 153.00, 0.1500, 'paid', '2026-04-23 11:40:00');
-
-INSERT INTO Payments (app_id, total_amount, commission_rate, payment_status, payment_date) VALUES
-(38, 102.50, 0.1500, 'paid', '2026-05-04 12:20:00'),
-(39, 90.00, 0.1500, 'paid', '2026-05-06 12:00:00');
-
-INSERT INTO Payments (app_id, total_amount, commission_rate, payment_status, payment_date) VALUES
-(46, 122.40, 0.1500, 'paid', '2026-06-05 20:40:00'),
-(47, 114.40, 0.1500, 'paid', '2026-06-06 12:45:00'),
-(48, 110.50, 0.1500, 'paid', '2026-06-07 19:50:00'),
-(49, 156.00, 0.1500, 'paid', '2026-07-02 10:15:00');
+INSERT INTO Payments (app_id, total_amount, provider_payout, commission_rate, payment_status, payment_date)
+SELECT
+    a.app_id,
+    a.actual_total,
+    a.provider_actual_payout,
+    0.1500,
+    'paid',
+    paid.payment_date
+FROM (
+    SELECT 1 AS app_id, '2026-05-02 12:10:00' AS payment_date UNION ALL
+    SELECT 4, '2026-04-28 14:00:00' UNION ALL
+    SELECT 5, '2026-04-29 17:20:00' UNION ALL
+    SELECT 9, '2026-04-25 13:45:00' UNION ALL
+    SELECT 11, '2026-04-22 13:10:00' UNION ALL
+    SELECT 14, '2026-04-30 17:30:00' UNION ALL
+    SELECT 18, '2026-04-18 15:20:00' UNION ALL
+    SELECT 19, '2026-04-24 17:00:00' UNION ALL
+    SELECT 22, '2026-04-21 20:15:00' UNION ALL
+    SELECT 23, '2026-04-20 15:45:00' UNION ALL
+    SELECT 25, '2026-04-26 13:25:00' UNION ALL
+    SELECT 26, '2026-04-05 12:30:00' UNION ALL
+    SELECT 27, '2026-04-09 14:10:00' UNION ALL
+    SELECT 28, '2026-04-12 16:00:00' UNION ALL
+    SELECT 29, '2026-04-15 19:00:00' UNION ALL
+    SELECT 32, '2026-04-17 13:15:00' UNION ALL
+    SELECT 33, '2026-04-19 14:00:00' UNION ALL
+    SELECT 34, '2026-04-23 11:40:00' UNION ALL
+    SELECT 38, '2026-05-04 12:20:00' UNION ALL
+    SELECT 39, '2026-05-06 12:00:00' UNION ALL
+    SELECT 46, '2026-06-05 20:40:00' UNION ALL
+    SELECT 47, '2026-06-06 12:45:00' UNION ALL
+    SELECT 48, '2026-06-07 19:50:00' UNION ALL
+    SELECT 49, '2026-07-02 10:15:00'
+) paid
+JOIN Appointments a ON a.app_id = paid.app_id;
 
 INSERT INTO Reviews (app_id, rating, review_direction, comment) VALUES
 (1, 5, 'receiver_to_provider', 'Fast repair and very clear communication.'),

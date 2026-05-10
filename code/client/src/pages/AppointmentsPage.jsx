@@ -43,7 +43,7 @@ function statusOptionsFor(user, row) {
   if (user.role === 'receiver') {
     const transitions = {
       pending: ['cancelled'],
-      accepted: ['cancelled', 'completed'],
+      accepted: ['cancelled'],
       in_progress: ['completed']
     };
     return [row.appointment_status, ...(transitions[row.appointment_status] || [])];
@@ -121,7 +121,13 @@ export default function AppointmentsPage() {
 
   const selectedProvider = providers.find((provider) => String(provider.provider_id) === String(form.provider_id));
   const selectedService = services.find((service) => String(service.service_id) === String(form.service_id));
-  const baseRate = Number(selectedProvider?.base_hourly_rate || selectedService?.base_hourly_rate || 0);
+  const baseRate = Number(
+    selectedProvider?.receiver_base_hourly_rate
+    || selectedService?.receiver_base_hourly_rate
+    || selectedProvider?.base_hourly_rate
+    || selectedService?.base_hourly_rate
+    || 0
+  );
   const scheduleSurcharge = scheduleSurchargeFor(form.scheduled_time, form.estimated_hours);
   const finalHourlyRate = baseRate * (1 + scheduleSurcharge.rate);
   const tipAmount = Number(form.tip_amount || 0);
@@ -131,6 +137,9 @@ export default function AppointmentsPage() {
     accepted: unavailableTimes.filter((time) => ['accepted', 'in_progress'].includes(time.block_type)),
     manual: unavailableTimes.filter((time) => time.block_type === 'manual')
   }), [unavailableTimes]);
+  const paymentByAppointmentId = React.useMemo(() => new Map(
+    payments.map((payment) => [Number(payment.app_id), payment])
+  ), [payments]);
 
   async function load() {
     try {
@@ -466,6 +475,28 @@ export default function AppointmentsPage() {
       && !payments.some((payment) => Number(payment.app_id) === Number(row.app_id));
   }
 
+  function providerPayoutFor(row) {
+    const payment = paymentByAppointmentId.get(Number(row.app_id));
+    if (payment?.provider_payout !== undefined && payment?.provider_payout !== null) {
+      return currency(payment.provider_payout);
+    }
+    const payout = Number(row.provider_actual_payout || row.provider_estimated_payout || 0);
+    return `${currency(payout)} est.`;
+  }
+
+  const rateColumns = user.role === 'manager'
+    ? [
+      { key: 'provider_base_hourly_rate_at_booking', label: 'Provider Base', render: (row) => currency(row.provider_base_hourly_rate_at_booking) },
+      { key: 'receiver_base_hourly_rate_at_booking', label: 'Receiver Base', render: (row) => currency(row.receiver_base_hourly_rate_at_booking) }
+    ]
+    : [
+      {
+        key: user.role === 'provider' ? 'provider_base_hourly_rate_at_booking' : 'receiver_base_hourly_rate_at_booking',
+        label: 'Base Rate',
+        render: (row) => currency(user.role === 'provider' ? row.provider_base_hourly_rate_at_booking : row.receiver_base_hourly_rate_at_booking)
+      }
+    ];
+
   const columns = [
     { key: 'app_id', label: 'ID' },
     ...(user.role !== 'receiver' ? [{ key: 'receiver_name', label: 'Receiver' }] : []),
@@ -487,12 +518,14 @@ export default function AppointmentsPage() {
       )
     },
     { key: 'scheduled_time', label: 'Scheduled', render: (row) => shortDateTime(row.scheduled_time) },
-    { key: 'hourly_rate_at_booking', label: 'Rate', render: (row) => currency(row.hourly_rate_at_booking) },
+    ...rateColumns,
     { key: 'schedule_surcharge_rate', label: 'Surcharge', render: (row) => Number(row.schedule_surcharge_rate || 0) ? `${Math.round(Number(row.schedule_surcharge_rate) * 100)}%` : 'None' },
     { key: 'estimated_hours', label: 'Hours' },
     { key: 'tip_amount', label: 'Tip', render: (row) => currency(row.tip_amount || 0) },
     { key: 'actual_hours', label: 'Actual', render: (row) => row.actual_hours || 'Not set' },
-    { key: 'actual_total', label: 'Final', render: (row) => currency(row.actual_total || row.estimated_total) }
+    user.role === 'provider'
+      ? { key: 'provider_payout', label: 'Payout', render: providerPayoutFor }
+      : { key: 'actual_total', label: 'Final', render: (row) => currency(row.actual_total || row.estimated_total) }
   ];
 
   return (

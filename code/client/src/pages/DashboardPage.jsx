@@ -49,16 +49,15 @@ function paymentColumns(role) {
   const columns = [
     { key: 'payment_id', label: 'ID' },
     { key: 'service_name', label: 'Service' },
-    { key: 'total_amount', label: 'Total', render: (row) => currency(row.total_amount) },
+    role === 'provider'
+      ? { key: 'provider_payout', label: 'My Payout', render: (row) => currency(row.provider_payout) }
+      : { key: 'total_amount', label: 'Total', render: (row) => currency(row.total_amount) },
     { key: 'payment_status', label: 'Status', render: (row) => <StatusBadge value={row.payment_status} /> }
   ];
 
   if (role === 'manager') {
     columns.splice(2, 0, { key: 'provider_name', label: 'Provider' });
     columns.splice(4, 0, { key: 'provider_payout', label: 'Payout', render: (row) => currency(row.provider_payout) });
-  }
-  if (role === 'provider') {
-    columns.splice(3, 0, { key: 'provider_payout', label: 'My Payout', render: (row) => currency(row.provider_payout) });
   }
   return columns;
 }

@@ -22,7 +22,9 @@ const appointmentSelect = `
     ad.zip_code,
     a.appointment_status,
     a.scheduled_time,
-    a.hourly_rate_at_booking,
+    a.provider_base_hourly_rate_at_booking,
+    a.platform_fee_rate,
+    a.receiver_base_hourly_rate_at_booking,
     a.schedule_surcharge_rate,
     a.schedule_surcharge_reason,
     a.estimated_hours,
@@ -30,6 +32,8 @@ const appointmentSelect = `
     a.estimated_total,
     a.actual_hours,
     a.actual_total,
+    a.provider_estimated_payout,
+    a.provider_actual_payout,
     a.created_at,
     CASE
       WHEN a.appointment_status = 'pending' THEN (
@@ -92,20 +96,22 @@ async function create(appointment, executor = null) {
       service_id,
       address_id,
       scheduled_time,
-      hourly_rate_at_booking,
+      provider_base_hourly_rate_at_booking,
+      platform_fee_rate,
       schedule_surcharge_rate,
       schedule_surcharge_reason,
       estimated_hours,
       tip_amount
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `, [
     appointment.receiver_id,
     appointment.provider_id,
     appointment.service_id,
     appointment.address_id,
     appointment.scheduled_time,
-    appointment.hourly_rate_at_booking,
+    appointment.provider_base_hourly_rate_at_booking,
+    appointment.platform_fee_rate,
     appointment.schedule_surcharge_rate,
     appointment.schedule_surcharge_reason,
     appointment.estimated_hours,
@@ -133,7 +139,8 @@ async function updatePendingRequest(id, appointment, executor = null) {
     UPDATE Appointments
     SET
       scheduled_time = ?,
-      hourly_rate_at_booking = ?,
+      provider_base_hourly_rate_at_booking = ?,
+      platform_fee_rate = ?,
       schedule_surcharge_rate = ?,
       schedule_surcharge_reason = ?,
       estimated_hours = ?,
@@ -141,7 +148,8 @@ async function updatePendingRequest(id, appointment, executor = null) {
     WHERE app_id = ?
   `, [
     appointment.scheduled_time,
-    appointment.hourly_rate_at_booking,
+    appointment.provider_base_hourly_rate_at_booking,
+    appointment.platform_fee_rate,
     appointment.schedule_surcharge_rate,
     appointment.schedule_surcharge_reason,
     appointment.estimated_hours,

@@ -206,8 +206,13 @@ Important schema rules:
 - Role tables allow the same email across different roles, but each role table has unique email.
 - `Appointments(provider_id, service_id)` references `Provider_Services(provider_id, service_id)`.
 - `Appointments(address_id, receiver_id)` references `Addresses(address_id, receiver_id)`.
-- `Appointments.actual_total` and `estimated_total` are generated columns.
-- `Payments.commission_fee` and `provider_payout` are generated columns.
+- `Appointments` stores the provider's base hourly rate, then generates the receiver-visible base rate with the platform fee:
+  `receiver_base_hourly_rate_at_booking = provider_base_hourly_rate_at_booking * (1 + platform_fee_rate)`.
+- Receiver totals use the receiver-visible base rate:
+  `provider_base_hourly_rate_at_booking * (1 + platform_fee_rate) * (1 + schedule_surcharge_rate) * hours + tip_amount`.
+- Provider payouts use the provider base rate:
+  `provider_base_hourly_rate_at_booking * (1 + schedule_surcharge_rate) * hours + tip_amount`.
+- `Payments.commission_fee` is generated as `total_amount - provider_payout`.
 - `Payments.app_id` is unique, so one appointment cannot be paid twice.
 - `Reviews(app_id, review_direction)` is unique, so each side can review once.
 - Each receiver can have one default address through a MySQL functional unique index.
@@ -243,7 +248,8 @@ Booking rules:
 - Providers cannot create appointments.
 - When a provider is selected, services are filtered to services approved for that provider.
 - When a service is selected, providers are filtered to providers approved for that service.
-- Providers can accept, reject, move to in progress, or complete appointments assigned to them.
+- Providers can accept, reject, and move assigned appointments to in progress.
+- Receivers confirm completion after the provider marks the appointment in progress.
 - Completed appointments cannot have actual hours changed from the UI.
 - Pending appointments can be adjusted by receiver/manager before provider acceptance.
 - Receivers can add a tip to pending requests.
@@ -263,6 +269,7 @@ Provider time rules:
 Payment rules:
 
 - Payment is based on actual service time after completion.
+- Appointment revenue uses the stored base rate snapshot, schedule surcharge rate, actual hours, and tip.
 - Receiver pays from wallet balance.
 - Receiver can recharge their own wallet.
 - Manager can recharge any receiver wallet.

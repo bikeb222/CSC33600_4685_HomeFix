@@ -23,7 +23,8 @@ exports.list = asyncHandler(async (req, res) => {
   const providers = await providerService.list({
     search: req.query.search || '',
     serviceId: req.query.serviceId || null,
-    activeOnly: req.user.role === 'receiver'
+    activeOnly: req.user.role === 'receiver',
+    viewerRole: req.user.role
   });
   res.json(providers);
 });
@@ -48,7 +49,7 @@ exports.remove = asyncHandler(async (req, res) => {
 });
 
 exports.listServices = asyncHandler(async (req, res) => {
-  const services = await providerService.listServices(req.params.id);
+  const services = await providerService.listServices(req.params.id, req.user.role);
   res.json(services);
 });
 

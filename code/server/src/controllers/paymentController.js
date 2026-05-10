@@ -19,6 +19,21 @@ function canAccessPayment(user, payment) {
     || (user.role === 'receiver' && Number(user.receiver_id) === Number(payment.receiver_id));
 }
 
+function shapePaymentForUser(user, payment) {
+  const shaped = { ...payment };
+  if (user.role === 'provider') {
+    delete shaped.total_amount;
+    delete shaped.commission_fee;
+    delete shaped.commission_rate;
+  }
+  if (user.role === 'receiver') {
+    delete shaped.provider_payout;
+    delete shaped.commission_fee;
+    delete shaped.commission_rate;
+  }
+  return shaped;
+}
+
 exports.create = asyncHandler(async (req, res) => {
   if (!['manager', 'receiver'].includes(req.user.role)) {
     throw new AppError('Only managers and receivers can create payments', 403);
@@ -32,17 +47,18 @@ exports.create = asyncHandler(async (req, res) => {
     payload.payment_status = 'paid';
     delete payload.total_amount;
     delete payload.commission_rate;
+    delete payload.provider_payout;
   }
   const payment = await paymentService.create(payload);
   if (!canAccessPayment(req.user, payment)) {
     throw new AppError('You do not have permission to create this payment', 403);
   }
-  res.status(201).json(payment);
+  res.status(201).json(shapePaymentForUser(req.user, payment));
 });
 
 exports.list = asyncHandler(async (req, res) => {
   const payments = await paymentService.list(scopedPaymentFilters(req.user));
-  res.json(payments);
+  res.json(payments.map((payment) => shapePaymentForUser(req.user, payment)));
 });
 
 exports.getById = asyncHandler(async (req, res) => {
@@ -50,7 +66,7 @@ exports.getById = asyncHandler(async (req, res) => {
   if (!canAccessPayment(req.user, payment)) {
     throw new AppError('You do not have permission to access this payment', 403);
   }
-  res.json(payment);
+  res.json(shapePaymentForUser(req.user, payment));
 });
 
 exports.getByAppointment = asyncHandler(async (req, res) => {
@@ -58,7 +74,7 @@ exports.getByAppointment = asyncHandler(async (req, res) => {
   if (!canAccessPayment(req.user, payment)) {
     throw new AppError('You do not have permission to access this payment', 403);
   }
-  res.json(payment);
+  res.json(shapePaymentForUser(req.user, payment));
 });
 
 exports.updateStatus = asyncHandler(async (req, res) => {
@@ -66,7 +82,7 @@ exports.updateStatus = asyncHandler(async (req, res) => {
     throw new AppError('Only managers can update payment status', 403);
   }
   const payment = await paymentService.updateStatus(req.params.id, req.body.payment_status);
-  res.json(payment);
+  res.json(shapePaymentForUser(req.user, payment));
 });
 
 exports.recharge = asyncHandler(async (req, res) => {

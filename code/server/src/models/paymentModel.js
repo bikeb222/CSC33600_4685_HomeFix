@@ -16,6 +16,7 @@ const paymentSelect = `
     a.estimated_hours,
     a.actual_hours,
     a.actual_total,
+    a.provider_actual_payout,
     r.display_name AS receiver_name,
     p.display_name AS provider_name,
     s.service_name,
@@ -68,7 +69,15 @@ async function findByAppId(appId) {
 
 async function appointmentForPayment(appId) {
   const rows = await query(`
-    SELECT app_id, receiver_id, provider_id, appointment_status, estimated_total, actual_hours, actual_total
+    SELECT
+      app_id,
+      receiver_id,
+      provider_id,
+      appointment_status,
+      estimated_total,
+      actual_hours,
+      actual_total,
+      provider_actual_payout
     FROM Appointments
     WHERE app_id = ?
   `, [appId]);
@@ -77,11 +86,12 @@ async function appointmentForPayment(appId) {
 
 async function create(payment) {
   const result = await query(`
-    INSERT INTO Payments (app_id, total_amount, commission_rate, payment_status, payment_date)
-    VALUES (?, ?, ?, ?, CASE WHEN ? = 'paid' THEN CURRENT_TIMESTAMP ELSE NULL END)
+    INSERT INTO Payments (app_id, total_amount, provider_payout, commission_rate, payment_status, payment_date)
+    VALUES (?, ?, ?, ?, ?, CASE WHEN ? = 'paid' THEN CURRENT_TIMESTAMP ELSE NULL END)
   `, [
     payment.app_id,
     payment.total_amount,
+    payment.provider_payout,
     payment.commission_rate,
     payment.payment_status,
     payment.payment_status

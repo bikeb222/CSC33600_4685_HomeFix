@@ -158,16 +158,31 @@ CREATE TABLE Appointments (
     address_id INT NOT NULL,
     appointment_status VARCHAR(20) NOT NULL DEFAULT 'pending',
     scheduled_time DATETIME NOT NULL,
-    hourly_rate_at_booking DECIMAL(8,2) NOT NULL,
+    provider_base_hourly_rate_at_booking DECIMAL(8,2) NOT NULL,
+    platform_fee_rate DECIMAL(5,4) NOT NULL DEFAULT 0.1500,
+    receiver_base_hourly_rate_at_booking DECIMAL(8,2)
+        GENERATED ALWAYS AS (ROUND(provider_base_hourly_rate_at_booking * (1 + platform_fee_rate), 2)) STORED,
     schedule_surcharge_rate DECIMAL(5,4) NOT NULL DEFAULT 0.0000,
     schedule_surcharge_reason VARCHAR(30) NOT NULL DEFAULT 'standard_hours',
     estimated_hours DECIMAL(5,2) NOT NULL,
     tip_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
     actual_hours DECIMAL(5,2) NULL,
     estimated_total DECIMAL(10,2)
-        GENERATED ALWAYS AS ((hourly_rate_at_booking * estimated_hours) + tip_amount) STORED,
+        GENERATED ALWAYS AS (
+            ROUND((provider_base_hourly_rate_at_booking * (1 + platform_fee_rate) * (1 + schedule_surcharge_rate) * estimated_hours) + tip_amount, 2)
+        ) STORED,
     actual_total DECIMAL(10,2)
-        GENERATED ALWAYS AS ((hourly_rate_at_booking * COALESCE(actual_hours, estimated_hours)) + tip_amount) STORED,
+        GENERATED ALWAYS AS (
+            ROUND((provider_base_hourly_rate_at_booking * (1 + platform_fee_rate) * (1 + schedule_surcharge_rate) * COALESCE(actual_hours, estimated_hours)) + tip_amount, 2)
+        ) STORED,
+    provider_estimated_payout DECIMAL(10,2)
+        GENERATED ALWAYS AS (
+            ROUND((provider_base_hourly_rate_at_booking * (1 + schedule_surcharge_rate) * estimated_hours) + tip_amount, 2)
+        ) STORED,
+    provider_actual_payout DECIMAL(10,2)
+        GENERATED ALWAYS AS (
+            ROUND((provider_base_hourly_rate_at_booking * (1 + schedule_surcharge_rate) * COALESCE(actual_hours, estimated_hours)) + tip_amount, 2)
+        ) STORED,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_appointments_receiver
@@ -201,8 +216,11 @@ CREATE TABLE Appointments (
             )
         ),
 
-    CONSTRAINT chk_hourly_rate_at_booking
-        CHECK (hourly_rate_at_booking >= 0),
+    CONSTRAINT chk_provider_base_hourly_rate_at_booking
+        CHECK (provider_base_hourly_rate_at_booking >= 0),
+
+    CONSTRAINT chk_platform_fee_rate
+        CHECK (platform_fee_rate >= 0),
 
     CONSTRAINT chk_schedule_surcharge_rate
         CHECK (schedule_surcharge_rate >= 0),
@@ -247,10 +265,9 @@ CREATE TABLE Payments (
     app_id INT NOT NULL,
     total_amount DECIMAL(10,2) NOT NULL,
     commission_rate DECIMAL(5,4) NOT NULL,
+    provider_payout DECIMAL(10,2) NOT NULL,
     commission_fee DECIMAL(10,2)
-        GENERATED ALWAYS AS (total_amount * commission_rate) STORED,
-    provider_payout DECIMAL(10,2)
-        GENERATED ALWAYS AS (total_amount - (total_amount * commission_rate)) STORED,
+        GENERATED ALWAYS AS (total_amount - provider_payout) STORED,
     payment_status VARCHAR(30) NOT NULL DEFAULT 'unpaid',
     payment_date TIMESTAMP NULL,
 
@@ -264,6 +281,9 @@ CREATE TABLE Payments (
 
     CONSTRAINT chk_total_amount
         CHECK (total_amount >= 0),
+
+    CONSTRAINT chk_provider_payout
+        CHECK (provider_payout >= 0 AND provider_payout <= total_amount),
 
     CONSTRAINT chk_commission_rate
         CHECK (commission_rate >= 0 AND commission_rate <= 1),
@@ -590,6 +610,7 @@ CREATE PROCEDURE sp_create_payment_for_completed_appointment(
 BEGIN
     DECLARE v_receiver_id INT DEFAULT NULL;
     DECLARE v_total_amount DECIMAL(10,2) DEFAULT 0.00;
+    DECLARE v_provider_payout DECIMAL(10,2) DEFAULT 0.00;
     DECLARE v_wallet_balance DECIMAL(10,2) DEFAULT 0.00;
     DECLARE v_payment_id INT DEFAULT NULL;
     DECLARE v_matching_count INT DEFAULT 0;
@@ -624,8 +645,8 @@ BEGIN
 
     START TRANSACTION;
 
-    SELECT receiver_id, actual_total
-    INTO v_receiver_id, v_total_amount
+    SELECT receiver_id, actual_total, provider_actual_payout
+    INTO v_receiver_id, v_total_amount, v_provider_payout
     FROM Appointments
     WHERE app_id = p_app_id
     FOR UPDATE;
@@ -645,8 +666,8 @@ BEGIN
     SET wallet_balance = wallet_balance - v_total_amount
     WHERE receiver_id = v_receiver_id;
 
-    INSERT INTO Payments (app_id, total_amount, commission_rate, payment_status, payment_date)
-    VALUES (p_app_id, v_total_amount, p_commission_rate, 'paid', CURRENT_TIMESTAMP);
+    INSERT INTO Payments (app_id, total_amount, provider_payout, commission_rate, payment_status, payment_date)
+    VALUES (p_app_id, v_total_amount, v_provider_payout, p_commission_rate, 'paid', CURRENT_TIMESTAMP);
 
     SET v_payment_id = LAST_INSERT_ID();
 
@@ -689,7 +710,9 @@ SELECT
     s.service_name,
     a.scheduled_time,
     a.appointment_status,
-    a.hourly_rate_at_booking,
+    a.provider_base_hourly_rate_at_booking,
+    a.platform_fee_rate,
+    a.receiver_base_hourly_rate_at_booking,
     a.schedule_surcharge_rate,
     a.schedule_surcharge_reason,
     a.estimated_hours,
@@ -697,6 +720,8 @@ SELECT
     a.estimated_total,
     a.actual_hours,
     a.actual_total,
+    a.provider_estimated_payout,
+    a.provider_actual_payout,
     CONCAT(ad.street, ', ', ad.city, ', ', COALESCE(ad.state, ''), ' ', COALESCE(ad.zip_code, '')) AS service_address
 FROM Appointments a
 JOIN Receivers r ON a.receiver_id = r.receiver_id

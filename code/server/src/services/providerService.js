@@ -32,11 +32,12 @@ async function register(payload, actor) {
   return providerModel.findById(user.provider_id);
 }
 
-async function list({ search = '', serviceId = null, activeOnly = false } = {}) {
+async function list({ search = '', serviceId = null, activeOnly = false, viewerRole = 'manager' } = {}) {
   return providerModel.list({
     search,
     serviceId: serviceId ? normalizeId(serviceId, 'service_id') : null,
-    activeOnly
+    activeOnly,
+    viewerRole
   });
 }
 
@@ -94,9 +95,9 @@ async function remove(id) {
   }
 }
 
-async function listServices(providerId) {
+async function listServices(providerId, viewerRole = 'manager') {
   await getById(providerId);
-  return providerModel.listServices(normalizeId(providerId, 'provider_id'));
+  return providerModel.listServices(normalizeId(providerId, 'provider_id'), viewerRole);
 }
 
 async function addService(providerId, payload, actor = null) {

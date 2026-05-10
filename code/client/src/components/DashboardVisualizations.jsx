@@ -220,6 +220,7 @@ function ManagerVisualizations({ appointments, payments, providers }) {
       <PlotCard title="Service Demand" description="Appointment volume by service category."><div className="plot-box" ref={serviceRef} /></PlotCard>
       <PlotCard title="Revenue Split" description="Platform commission compared with provider payout."><div className="plot-box" ref={splitRef} /></PlotCard>
       <PlotCard title="Receiver Spending Ranking" description="Total paid amount grouped by receiver."><div className="plot-box" ref={receiverRef} /></PlotCard>
+      <ManagerZipMap appointments={appointments} />
     </div>
   );
 }
@@ -268,7 +269,7 @@ function ProviderVisualizations({ appointments, payments, reviews }) {
 
   return (
     <div className="plot-grid">
-      <AppointmentCalendar title="My Appointment Pipeline" description="Assigned appointment dates are colored by their strongest status on that day." appointments={appointments} />
+      <AppointmentCalendar title="My Appointment Pipeline" description="Assigned appointment dates are colored by their strongest status on that day." appointments={appointments} amountMode="payout" />
       <PlotCard title="Payout Trend" description="Paid provider payout over time."><div className="plot-box" ref={payoutRef} /></PlotCard>
       <PlotCard title="Service Workload" description="Appointments grouped by service."><div className="plot-box" ref={serviceRef} /></PlotCard>
       <PlotCard title="Customer Feedback" description="Distribution of review scores."><div className="plot-box" ref={ratingRef} /></PlotCard>
@@ -276,9 +277,8 @@ function ProviderVisualizations({ appointments, payments, reviews }) {
   );
 }
 
-function ProviderZipMap({ appointments }) {
+function ZipCoverageMap({ title, description, zipEntries, hoverLabel, colorbarTitle }) {
   const mapRef = React.useRef(null);
-  const zipEntries = providerZipEntries(appointments);
 
   usePlot(mapRef, [{
     type: 'choroplethmapbox',
@@ -296,8 +296,8 @@ function ProviderZipMap({ appointments }) {
     zmin: 0,
     zmax: Math.max(...zipEntries.map((entry) => entry.count), 1),
     marker: { line: { color: '#5e7f88', width: 0.8 }, opacity: 0.86 },
-    colorbar: { title: 'Visits', thickness: 12 },
-    hovertemplate: 'ZIP %{location}<br>%{z} visit(s)<extra></extra>'
+    colorbar: { title: colorbarTitle, thickness: 12 },
+    hovertemplate: `ZIP %{location}<br>%{z} ${hoverLabel}<extra></extra>`
   }], {
     title: '',
     mapbox: {
@@ -306,12 +306,38 @@ function ProviderZipMap({ appointments }) {
       zoom: 9.15
     },
     margin: { t: 4, r: 16, b: 4, l: 16 }
-  }, [appointments]);
+  }, [zipEntries, hoverLabel]);
 
   return (
-    <PlotCard title="NYC ZIP Coverage" description="White ZIP areas have no visits; darker blue areas show more completed or active visits in New York City." className="wide-map-card">
+    <PlotCard title={title} description={description} className="wide-map-card">
       <div className="plot-box map-box" ref={mapRef} />
     </PlotCard>
+  );
+}
+
+function ProviderZipMap({ appointments }) {
+  const zipEntries = React.useMemo(() => providerZipEntries(appointments), [appointments]);
+  return (
+    <ZipCoverageMap
+      title="NYC ZIP Coverage"
+      description="White ZIP areas have no visits; darker blue areas show more completed or active visits in New York City."
+      zipEntries={zipEntries}
+      hoverLabel="visit(s)"
+      colorbarTitle="Visits"
+    />
+  );
+}
+
+function ManagerZipMap({ appointments }) {
+  const zipEntries = React.useMemo(() => allAppointmentZipEntries(appointments), [appointments]);
+  return (
+    <ZipCoverageMap
+      title="NYC Appointment ZIP Coverage"
+      description="White ZIP areas have no appointments; darker blue areas show more total appointment activity across the platform."
+      zipEntries={zipEntries}
+      hoverLabel="appointment(s)"
+      colorbarTitle="Appointments"
+    />
   );
 }
 
@@ -394,11 +420,10 @@ function statusPriority(status) {
 const nycZipCodes = nycZipGeoJson.features.map((feature) => feature.properties.MODZCTA);
 const nycZipCodeSet = new Set(nycZipCodes);
 
-function providerZipEntries(appointments) {
-  const mapStatuses = new Set(['accepted', 'in_progress', 'completed']);
+function zipCoverageEntries(appointments, statusFilter = null) {
   const counts = appointments.reduce((acc, appointment) => {
     const zip = String(appointment.zip_code || '').slice(0, 5);
-    if (mapStatuses.has(appointment.appointment_status) && zip && nycZipCodeSet.has(zip)) {
+    if ((!statusFilter || statusFilter.has(appointment.appointment_status)) && zip && nycZipCodeSet.has(zip)) {
       acc[zip] = (acc[zip] || 0) + 1;
     }
     return acc;
@@ -406,7 +431,22 @@ function providerZipEntries(appointments) {
   return nycZipCodes.map((zip) => ({ zip, count: counts[zip] || 0 }));
 }
 
-function appointmentTooltip(appointments) {
+function providerZipEntries(appointments) {
+  return zipCoverageEntries(appointments, new Set(['accepted', 'in_progress', 'completed']));
+}
+
+function allAppointmentZipEntries(appointments) {
+  return zipCoverageEntries(appointments);
+}
+
+function appointmentAmount(appointment, amountMode = 'total') {
+  if (amountMode === 'payout') {
+    return appointment.provider_actual_payout || appointment.provider_estimated_payout || 0;
+  }
+  return appointment.actual_total || appointment.estimated_total || 0;
+}
+
+function appointmentTooltip(appointments, amountMode = 'total') {
   return appointments.map((appointment) => [
     `#${appointment.app_id} ${appointment.service_name || 'Service'} (${appointment.appointment_status})`,
     appointment.provider_name ? `Provider: ${appointment.provider_name}` : '',
@@ -414,11 +454,11 @@ function appointmentTooltip(appointments) {
     `Time: ${formatCalendarDateTime(appointment.scheduled_time)}`,
     appointment.address_label ? `Address: ${appointment.address_label}` : '',
     `Hours: ${appointment.actual_hours || appointment.estimated_hours || 0}`,
-    `Total: ${currency(appointment.actual_total || appointment.estimated_total || 0)}`
+    `${amountMode === 'payout' ? 'Payout' : 'Total'}: ${currency(appointmentAmount(appointment, amountMode))}`
   ].filter(Boolean).join('\n')).join('\n\n');
 }
 
-function AppointmentCalendar({ appointments, title = 'My Booking Status', description = 'Appointment dates are colored by their strongest status on that day.' }) {
+function AppointmentCalendar({ appointments, title = 'My Booking Status', description = 'Appointment dates are colored by their strongest status on that day.', amountMode = 'total' }) {
   const defaultDate = React.useMemo(() => (
     appointments.length
       ? appointmentDate([...appointments].sort((a, b) => appointmentDate(b) - appointmentDate(a))[0])
@@ -478,7 +518,7 @@ function AppointmentCalendar({ appointments, title = 'My Booking Status', descri
             key={cell.key}
             className={`calendar-day ${cell.blank ? 'blank' : ''}`}
             style={cell.status ? { '--status-color': statusColors[cell.status] || '#94a3b8' } : undefined}
-            aria-label={cell.appointments?.length ? appointmentTooltip(cell.appointments) : undefined}
+            aria-label={cell.appointments?.length ? appointmentTooltip(cell.appointments, amountMode) : undefined}
           >
             {!cell.blank && (
               <>
@@ -494,7 +534,7 @@ function AppointmentCalendar({ appointments, title = 'My Booking Status', descri
                         <p>{appointment.provider_name ? `Provider: ${appointment.provider_name}` : `Receiver: ${appointment.receiver_name}`}</p>
                         <p>{appointment.address_label}</p>
                         <p>Hours: {appointment.actual_hours || appointment.estimated_hours || 0}</p>
-                        <p>Total: {currency(appointment.actual_total || appointment.estimated_total || 0)}</p>
+                        <p>{amountMode === 'payout' ? 'Payout' : 'Total'}: {currency(appointmentAmount(appointment, amountMode))}</p>
                       </div>
                     ))}
                   </div>

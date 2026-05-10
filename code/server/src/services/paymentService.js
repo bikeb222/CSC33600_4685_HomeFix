@@ -62,6 +62,13 @@ async function create(payload) {
   const totalAmount = payload.total_amount === undefined
     ? appointment.actual_total
     : assertNonNegativeNumber(payload.total_amount, 'total_amount');
+  const providerPayout = payload.provider_payout === undefined
+    ? appointment.provider_actual_payout
+    : assertNonNegativeNumber(payload.provider_payout, 'provider_payout');
+
+  if (Number(providerPayout) > Number(totalAmount)) {
+    throw new AppError('provider_payout cannot be greater than total_amount', 400);
+  }
 
   if (paymentStatus === 'paid' && payload.total_amount === undefined) {
     const id = await paymentModel.createWithProcedure(appId, commissionRate);
@@ -78,6 +85,7 @@ async function create(payload) {
   const id = await paymentModel.create({
     app_id: appId,
     total_amount: totalAmount,
+    provider_payout: providerPayout,
     commission_rate: commissionRate,
     payment_status: paymentStatus
   });

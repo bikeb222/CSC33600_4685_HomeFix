@@ -1,6 +1,8 @@
 const { query } = require('../config/db');
 const { buildUpdateSet } = require('../utils/sql');
 
+const PLATFORM_FEE_RATE = 0.15;
+
 async function run(executor, sql, params = []) {
   if (executor) {
     const [rows] = await executor.execute(sql, params);
@@ -22,7 +24,30 @@ const providerColumns = `
   p.created_at
 `;
 
-async function list({ search = '', serviceId = null, activeOnly = false } = {}) {
+function rateColumns(viewerRole = 'manager') {
+  const receiverRateExpression = `ROUND(ps.base_hourly_rate * ${1 + PLATFORM_FEE_RATE}, 2)`;
+  if (viewerRole === 'provider') {
+    return `
+      ps.base_hourly_rate,
+      ps.base_hourly_rate AS provider_base_hourly_rate,
+      NULL AS receiver_base_hourly_rate
+    `;
+  }
+  if (viewerRole === 'receiver') {
+    return `
+      ${receiverRateExpression} AS base_hourly_rate,
+      NULL AS provider_base_hourly_rate,
+      ${receiverRateExpression} AS receiver_base_hourly_rate
+    `;
+  }
+  return `
+    ps.base_hourly_rate,
+    ps.base_hourly_rate AS provider_base_hourly_rate,
+    ${receiverRateExpression} AS receiver_base_hourly_rate
+  `;
+}
+
+async function list({ search = '', serviceId = null, activeOnly = false, viewerRole = 'manager' } = {}) {
   const params = [];
   const where = [];
 
@@ -50,7 +75,7 @@ async function list({ search = '', serviceId = null, activeOnly = false } = {}) 
         ${providerColumns},
         ps.service_id,
         s.service_name,
-        ps.base_hourly_rate,
+        ${rateColumns(viewerRole)},
         ps.approval_status
       FROM Providers p
       JOIN Provider_Services ps ON p.provider_id = ps.provider_id
@@ -116,14 +141,14 @@ async function remove(id) {
   return result.affectedRows;
 }
 
-async function listServices(providerId) {
+async function listServices(providerId, viewerRole = 'manager') {
   return query(`
     SELECT
       ps.provider_id,
       ps.service_id,
       s.service_name,
       s.description,
-      ps.base_hourly_rate,
+      ${rateColumns(viewerRole)},
       ps.approval_status,
       ps.requested_at,
       ps.reviewed_by,

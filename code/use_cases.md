@@ -133,7 +133,7 @@ Main flow:
    - selected service filters providers
    - selected provider filters services
 6. Receiver selects scheduled time and estimated hours.
-7. System shows rate snapshot, surcharge, tip, and estimated total.
+7. System shows the receiver-visible base rate, surcharge, tip, and estimated total.
 8. Receiver submits the request.
 9. System creates a pending appointment.
 
@@ -185,12 +185,13 @@ Goal: Pay for completed service.
 
 Main flow:
 
-1. Provider completes appointment and actual hours are set.
-2. Receiver opens My Appointments or Payments.
-3. Receiver clicks Pay.
-4. System creates payment using appointment actual total.
-5. System deducts receiver wallet balance.
-6. System records platform commission and provider payout.
+1. Provider moves the appointment to in progress and actual hours are set.
+2. Receiver confirms the appointment as completed.
+3. Receiver opens My Appointments or Payments.
+4. Receiver clicks Pay.
+5. System creates payment using appointment actual total.
+6. System deducts receiver wallet balance.
+7. System records platform commission and provider payout.
 
 Rules:
 
@@ -391,20 +392,22 @@ Rules:
 
 - Completed appointment actual hours cannot be edited from the UI.
 
-### UC-P10: Complete Appointment
+### UC-P10: Start Appointment Work
 
 Actor: Provider
 
-Goal: Finish service workflow.
+Goal: Move accepted service work into the active work stage.
 
 Main flow:
 
-1. Provider confirms service is finished.
-2. Provider changes appointment status to completed.
-3. Receiver can now pay and both sides can review.
+1. Provider reviews an accepted appointment.
+2. Provider records or adjusts actual service hours while work is active.
+3. Provider changes appointment status to in progress.
+4. Receiver can confirm completion after the service is finished.
 
 Rules:
 
+- Receiver confirmation is required before payment and reviews become available.
 - Payment requires completed appointment and actual hours.
 
 ### UC-P11: Review Receiver
@@ -660,12 +663,13 @@ Main flow:
 2. Provider reviews pending request.
 3. Provider accepts appointment.
 4. System rejects overlapping pending requests for that provider/time.
-5. Provider records actual hours.
-6. Provider marks appointment completed.
-7. Receiver pays appointment.
-8. Receiver reviews provider.
-9. Provider reviews receiver.
-10. Manager can inspect or intervene throughout the process.
+5. Provider moves appointment to in progress.
+6. Provider records actual hours.
+7. Receiver confirms completion.
+8. Receiver pays appointment.
+9. Receiver reviews provider.
+10. Provider reviews receiver.
+11. Manager can inspect or intervene throughout the process.
 
 ### UC-X2: Provider Conflict Handling
 
@@ -686,13 +690,15 @@ Actors: Receiver, Provider, Manager
 Main flow:
 
 1. Receiver chooses appointment time and estimated hours.
-2. System snapshots provider hourly rate.
-3. System applies schedule surcharge if needed.
-4. Receiver may add tip.
-5. Provider records actual hours.
-6. Final total uses actual hours and tip.
-7. Payment calculates commission fee and provider payout.
-8. Manager tracks platform revenue and payouts.
+2. System snapshots provider base hourly rate.
+3. System generates the receiver-visible base rate by adding the platform fee.
+4. System applies schedule surcharge if needed.
+5. Receiver may add tip.
+6. Provider records actual hours.
+7. Receiver final total uses the receiver-visible base rate, schedule surcharge, actual hours, and tip.
+8. Provider payout uses the provider base rate, schedule surcharge, actual hours, and tip.
+9. Payment calculates platform commission as receiver total minus provider payout.
+10. Manager tracks platform revenue and payouts.
 
 ### UC-X4: Service Skill Approval
 
