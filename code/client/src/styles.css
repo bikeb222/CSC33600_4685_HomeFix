@@ -746,6 +746,17 @@ tbody tr:hover {
   background: #f8fafc;
 }
 
+.table-link {
+  color: var(--primary);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.table-link:hover {
+  color: var(--primary-dark);
+}
+
 .row-actions {
   display: flex;
   align-items: center;

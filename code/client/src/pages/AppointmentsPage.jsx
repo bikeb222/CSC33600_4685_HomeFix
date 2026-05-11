@@ -167,7 +167,7 @@ export default function AppointmentsPage() {
 
   React.useEffect(() => {
     if (searchParams.get('new') === '1' && canCreateAppointment && !modalOpen) {
-      openCreateModal();
+      openCreateModal(searchParams.get('serviceId') || '');
       navigate('/appointments', { replace: true });
     }
   }, [searchParams, canCreateAppointment, modalOpen, navigate]);
@@ -180,7 +180,7 @@ export default function AppointmentsPage() {
     setAddresses(await api.receivers.addresses(receiverId));
   }
 
-  async function openCreateModal() {
+  async function openCreateModal(preselectedServiceId = '') {
     if (!canCreateAppointment) {
       return;
     }
@@ -193,10 +193,18 @@ export default function AppointmentsPage() {
     try {
       setFormLoading(true);
       setError('');
-      setForm(initialForm);
+      const normalizedServiceId = preselectedServiceId ? String(preselectedServiceId) : '';
+      setForm({
+        ...initialForm,
+        service_id: normalizedServiceId
+      });
       setTimeConfirmed(false);
-      setServices(await api.services.list());
-      setProviders(await api.providers.list());
+      const [serviceRows, providerRows] = await Promise.all([
+        api.services.list(),
+        normalizedServiceId ? api.providers.list({ serviceId: normalizedServiceId }) : api.providers.list()
+      ]);
+      setServices(serviceRows);
+      setProviders(providerRows);
       setUnavailableTimes([]);
       if (user.role === 'receiver') {
         await loadReceiverAddresses(user.receiver_id);

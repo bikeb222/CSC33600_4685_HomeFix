@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { BriefcaseBusiness, CalendarOff, Edit3, Plus, Send, Trash2 } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../auth/useAuth';
@@ -188,6 +189,17 @@ export default function ServicesPage() {
     }
   }
 
+  function renderServiceName(row) {
+    if (!['manager', 'receiver'].includes(user.role)) {
+      return row.service_name;
+    }
+    return (
+      <Link className="table-link" to={`/appointments?new=1&serviceId=${row.service_id}`}>
+        {row.service_name}
+      </Link>
+    );
+  }
+
   return (
     <div className="page-stack">
       <PageHeader
@@ -326,7 +338,7 @@ export default function ServicesPage() {
         searchFields={['service_name', 'description']}
         columns={[
           { key: 'service_id', label: 'ID' },
-          { key: 'service_name', label: 'Name' },
+          { key: 'service_name', label: 'Name', render: renderServiceName },
           { key: 'description', label: 'Description' },
           { key: 'provider_count', label: 'Providers' }
         ]}
