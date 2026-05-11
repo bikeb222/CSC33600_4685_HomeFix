@@ -1,0 +1,23 @@
+CREATE PROCEDURE sp_receiver_recharge(
+    IN p_receiver_id INT,
+    IN p_amount DECIMAL(10,2)
+)
+BEGIN
+    IF p_amount IS NULL OR p_amount <= 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Recharge amount must be greater than 0';
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM Receivers WHERE receiver_id = p_receiver_id) THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Receiver not found';
+    END IF;
+
+    UPDATE Receivers
+    SET wallet_balance = wallet_balance + p_amount
+    WHERE receiver_id = p_receiver_id;
+
+    SELECT receiver_id, wallet_balance
+    FROM Receivers
+    WHERE receiver_id = p_receiver_id;
+END$$
